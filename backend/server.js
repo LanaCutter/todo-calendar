@@ -32,7 +32,7 @@ app.use(morgan("combined", { stream: logger.stream }));
 
 app.use(
   cors({
-    origin: "http://localhost:8082",
+    origin: "http://localhost:8083",
     credentials: true,
   })
 );
@@ -42,7 +42,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", routes);
 
-const PORT = process.env.PORT || 3200;
+const PORT = process.env.PORT || 3201;
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {

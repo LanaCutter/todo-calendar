@@ -1,17 +1,21 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "./views/Home.vue";
+import Classes from "./views/Classes.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: "/",
-      name: "home",
-      component: Home,
+      redirect: { name: "classes" },
+    },
+    {
+      path: "/classes",
+      name: "classes",
+      component: Classes,
     },
     {
       path: "/:pathMatch(.*)*",
-      redirect: { name: "home" },
+      redirect: { name: "classes" },
     },
   ],
 });

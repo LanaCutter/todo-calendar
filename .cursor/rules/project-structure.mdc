@@ -45,7 +45,7 @@ todo-speckit/
 Backend (`backend/.env`):
 *   `DB_HOST`, `DB_USER`, `DB_PW`, `DB_NAME` — MySQL connection (default database: `todospeckit-db`).
 *   `AUTH_SECRET` — JWT signing secret (required in production).
-*   `PORT` — default `3200`.
+*   `PORT` — default `3201`.
 *   `NODE_ENV` — `development` | `production` | `test`.
 *   `SEQUELIZE_SYNC_ALTER` — set `true` to run `sync({ alter: true })` in dev only.
 
@@ -54,8 +54,8 @@ Frontend: use `import.meta.env.DEV` for dev/prod API base URL; `cross-env APP_EN
 Backend test env (`backend/.env.test`): copy from `backend/.env.test.example`; uses `NODE_ENV=test` and `DB_NAME=todospeckit-db-test`.
 
 ## Dev Ports
-*   Frontend Vite: `8082`
-*   Backend Express: `3200`
+*   Frontend Vite: `8083`
+*   Backend Express: `3201`
 *   CORS origin must match the frontend dev URL.
 
 ## Test Commands

@@ -63,11 +63,11 @@ Map low → light chrome (list rows, subtle panels); medium → cards and primar
 ## App Shell (`App.vue`)
 ```vue
 <v-app>
-  <MenuBar />
+  <Sidebar />
   <v-main><router-view /></v-main>
 </v-app>
 ```
-Hide `MenuBar` on login and register routes (Feature 1). Introduce `MenuBar` in Feature 2.
+`Sidebar` is a permanent navigation drawer with background `primary` and labels in `on-primary`. There is no top bar. Feature 2 introduces it on assignment and class routes.
 
 ## Form Components
 *   Reusable forms use `v-model` via `defineProps({ modelValue })` + `emit("update:modelValue")`.

@@ -55,6 +55,15 @@
 **Independent test:** Delete a class that has an assignment and receive `400` with the class and assignment still stored; delete a class with no assignments and see it removed
 **Acceptance scenarios:** see ### US-2.5 under Acceptance Criteria
 
+### US-2.6: Switch pages from a sidebar
+**As a** student
+**I want** a red sidebar and no top bar
+**So that** I can open assignments and classes from the side of the page
+
+**Priority:** P1
+**Independent test:** From the assignment page, click **Classes** in the sidebar and land on `/classes`, with no top bar and a sidebar in the primary red
+**Acceptance scenarios:** see ### US-2.6 under Acceptance Criteria
+
 ## Requirements
 
 ### Functional Requirements
@@ -69,7 +78,7 @@
 - **FR-008**: Validation failures MUST return `400` with the exact `message` strings in Acceptance Criteria. An unknown assignment id MUST return `404` with `{ "message": "Assignment with id=<id> not found." }`. A non-integer assignment id MUST return `400` with `{ "message": "Assignment id must be a number." }`.
 - **FR-009**: `DELETE /api/classes/:id` MUST return `400` with `{ "message": "This class still has assignments." }` when any assignment references that class, and MUST NOT delete the class. When no assignment references it, delete MUST still succeed as in Feature 1.
 - **FR-010**: The assignment page MUST confirm before deleting an assignment. Cancel MUST leave the assignment in place. If no class exists, the add form MUST show "Add a class before creating an assignment." and MUST NOT submit.
-- **FR-011**: `/` MUST show the assignment table. `/` MUST NOT redirect to `/classes`. `MenuBar` MUST link **Assignments** to `/` and **Classes** to `/classes`.
+- **FR-011**: `/` MUST show the assignment table. `/` MUST NOT redirect to `/classes`. A sidebar MUST link **Assignments** to `/` and **Classes** to `/classes`. There MUST be no top bar. The sidebar background MUST be theme color `primary` (the same red as primary buttons). Link text MUST use theme color `on-primary`.
 
 ## Assumptions
 
@@ -192,7 +201,8 @@ Flat JSON only. No `{ success, data }` envelope.
 
 ### App chrome
 
-*   `MenuBar` on assignment and class routes.
+*   `Sidebar` on assignment and class routes. No `v-app-bar` and no top bar.
+*   The sidebar is a permanent navigation drawer. Its background is theme color `primary`. Link labels use theme color `on-primary`.
 *   Links: **Assignments** (`/`) and **Classes** (`/classes`).
 *   `/` no longer redirects to `/classes`.
 
@@ -200,12 +210,12 @@ Flat JSON only. No `{ success, data }` envelope.
 
 *   Path: `/`. Heading: **Assignments**
 *   Primary action: **Add assignment** (`oc-cta`), opening the add dialog. Dialog actions sit outside `v-card-title`.
-*   Table columns: **Name**, **Class**, **Start working by**, **Due date**, **Due time**.
+*   Table columns: **Name**, **Class**, **Due date**, **Due time**, **Start working by**.
 *   **Class** cell: a swatch in `class.color` plus `class.name`.
 *   Empty date or time cells are blank.
 *   Row order matches **FR-005**.
 *   Row actions: **Edit assignment** (`aria-label` **Edit assignment**) and **Delete assignment** (`aria-label` **Delete assignment**).
-*   **Add assignment** dialog fields: **Name**, **Class** (select of existing classes by name), **Start working by** (date), **Due date** (date), **Due time** (time). Actions: **Save** and **Cancel**.
+*   **Add assignment** dialog fields, in this order: **Name**, **Class** (select of existing classes by name), **Due date** (date), **Due time** (time), **Start working by** (date). Actions: **Save** and **Cancel**.
 *   When no class exists, the dialog shows "Add a class before creating an assignment." and **Save** does not submit.
 *   **Edit assignment** dialog: same fields, filled from the row. Title **Edit assignment**. Actions: **Save** and **Cancel**. Clearing a date or time and saving sends `null` for that field.
 *   **Delete** confirm: text **Delete this assignment?** Actions: **Delete** and **Cancel**.
@@ -215,7 +225,7 @@ Flat JSON only. No `{ success, data }` envelope.
 
 ### [View: Classes] — route name `classes`
 
-*   Feature 1 screen, plus `MenuBar`.
+*   Feature 1 screen, plus `Sidebar`.
 *   When delete returns "This class still has assignments.", show that message in `<v-alert type="error">` and leave the class in the list.
 
 ## Data Model Requirements
@@ -400,6 +410,15 @@ Do not cascade-delete assignments when a class is deleted. The API rejects that 
 *   **Then** the API returns `200` with `{ "message": "Class deleted." }`
 *   **And** Art is gone from the class list
 
+### US-2.6 — Switch pages from a sidebar
+
+#### Scenario: User opens classes from the sidebar
+*   **Given** I am on the assignment page
+*   **When** I click **Classes** in the sidebar
+*   **Then** the page is `/classes`
+*   **And** there is no top bar
+*   **And** the sidebar background is theme color `primary`
+
 ## Test Coverage Map
 
 Each scenario above must map to at least one automated test. `it` names match the scenario titles. When a scenario checks both the API and the page, use that title in each mapped file.
@@ -437,6 +456,7 @@ Each scenario above must map to at least one automated test. `it` names match th
 | US-2.5 | User cannot delete a class that has an assignment | `backend/tests/assignments.test.js` | `User cannot delete a class that has an assignment` |
 | US-2.5 | User cannot delete a class that has an assignment | `frontend/tests/Classes.test.js` | `User cannot delete a class that has an assignment` |
 | US-2.5 | User deletes a class that has no assignments | `backend/tests/assignments.test.js` | `User deletes a class that has no assignments` |
+| US-2.6 | User opens classes from the sidebar | `frontend/tests/App.test.js` | `User opens classes from the sidebar` |
 
 ## Agent implementation request
 
@@ -456,7 +476,7 @@ Do not implement behavior not in this spec. Do not add sign-in, sessions, userId
 
 ## Definition of Done
 
-*   [ ] Backend and frontend implemented per this spec (**FR-001** through **FR-011** satisfied)
+*   [ ] Backend and frontend implemented per this spec (**FR-001** through **FR-011** satisfied, including **US-2.6**)
 *   [ ] **Success Criteria (SC-001** through **SC-003)** met
 *   [ ] All mapped tests pass (`npm test`)
 *   [ ] Test Coverage Map complete
@@ -469,10 +489,10 @@ Do not implement behavior not in this spec. Do not add sign-in, sessions, userId
 *   Sign-in, registration, sessions, and route protection
 *   Calendar stripes and month navigation ([Feature 3](./feature-3-assignment-calendar.md))
 *   Day todos, stars, and deleting day todos with an assignment ([Feature 4](./feature-4-assignment-day-todos.md))
-*   Renaming **Assignments** in the menu (Feature 3 labels the table link **Table**; [Feature 5](./feature-5-completion-and-filter.md) names it **Assignments** again)
+*   Renaming **Assignments** in the sidebar (Feature 3 labels the table link **Table**; [Feature 5](./feature-5-completion-and-filter.md) names it **Assignments** again)
 *   Completion checkboxes and the unfinished/all filter ([Feature 5](./feature-5-completion-and-filter.md))
 *   More than one user
 
 ## Delivered to Feature 3
 
-*   The assignment table lives at `/` with `MenuBar` links **Assignments** and **Classes**. Feature 3 adds `/calendar` and labels the table link **Table**.
+*   The assignment table lives at `/` with a primary-red `Sidebar` and no top bar. Links are **Assignments** and **Classes**. Feature 3 adds `/calendar` and labels the table link **Table**.

@@ -128,6 +128,12 @@ exports.remove = async (req, res) => {
       return;
     }
 
+    const count = await db.assignment.count({ where: { classId: id } });
+    if (count > 0) {
+      res.status(400).send({ message: "This class still has assignments." });
+      return;
+    }
+
     await row.destroy();
     res.send({ message: "Class deleted." });
   } catch (err) {

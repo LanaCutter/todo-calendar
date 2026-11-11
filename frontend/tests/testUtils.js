@@ -10,7 +10,8 @@ export async function createTestRouter(initialPath = "/") {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: "/", name: "home", component: { template: "<div>Home</div>" } },
+      { path: "/", name: "assignments", component: { template: "<div>Assignments</div>" } },
+      { path: "/classes", name: "classes", component: { template: "<div>Classes</div>" } },
       { path: "/login", name: "login", component: { template: "<div>Login</div>" } },
       { path: "/register", name: "register", component: { template: "<div>Register</div>" } },
     ],

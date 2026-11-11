@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import Assignments from "./views/Assignments.vue";
 import Classes from "./views/Classes.vue";
 
 const router = createRouter({
@@ -6,7 +7,8 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      redirect: { name: "classes" },
+      name: "assignments",
+      component: Assignments,
     },
     {
       path: "/classes",
@@ -15,7 +17,7 @@ const router = createRouter({
     },
     {
       path: "/:pathMatch(.*)*",
-      redirect: { name: "classes" },
+      redirect: { name: "assignments" },
     },
   ],
 });

@@ -41,7 +41,7 @@
 - **FR-007**: A span that crosses months MUST show only the days that fall in the visible month. Moving to the next or previous month MUST show the rest of the span.
 - **FR-008**: Two assignments on the same day MUST both be visible that day.
 - **FR-009**: The month grid MUST still render when nothing is drawn. When the visible month has no stripe, the page MUST show "No assignments on this month's calendar." When the month has a stripe, that message MUST NOT appear.
-- **FR-010**: `MenuBar` MUST link **Table** to `/`, **Calendar** to `/calendar`, and **Classes** to `/classes`. The Feature 2 label **Assignments** on the table link MUST be replaced by **Table**.
+- **FR-010**: The sidebar MUST link **Table** to `/`, **Calendar** to `/calendar`, and **Classes** to `/classes`. The Feature 2 label **Assignments** on the table link MUST be replaced by **Table**. The sidebar stays theme color `primary` with no top bar.
 - **FR-011**: Build the month grid with Vue and Vuetify. Do not add a calendar library.
 
 ## Assumptions
@@ -105,7 +105,7 @@ A stripe is drawn from fields already on that payload:
 
 ### App chrome
 
-*   `MenuBar` links: **Table** (`/`, route `assignments`), **Calendar** (`/calendar`, route `calendar`), **Classes** (`/classes`).
+*   Sidebar links: **Table** (`/`, route `assignments`), **Calendar** (`/calendar`, route `calendar`), **Classes** (`/classes`).
 *   The table link label is **Table**, not **Assignments**.
 
 ### [View: Calendar] — route name `calendar`

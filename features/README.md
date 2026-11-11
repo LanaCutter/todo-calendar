@@ -16,7 +16,11 @@ No application code may be written unless it maps to a requirement in one of the
 
 | ID | File | Branch | Depends on |
 |----|------|--------|------------|
-| — | *Add `feature-1-….md` before implementation* | `feature/1-…` | — |
+| 1 | [feature-1-class-management.md](./feature-1-class-management.md) | `feature/1-class-management` | — |
+| 2 | [feature-2-assignment-management.md](./feature-2-assignment-management.md) | `feature/2-assignment-management` | Feature 1 |
+| 3 | [feature-3-assignment-calendar.md](./feature-3-assignment-calendar.md) | `feature/3-assignment-calendar` | Feature 2 |
+| 4 | [feature-4-assignment-day-todos.md](./feature-4-assignment-day-todos.md) | `feature/4-assignment-day-todos` | Feature 3 |
+| 5 | [feature-5-completion-and-filter.md](./feature-5-completion-and-filter.md) | `feature/5-completion-and-filter` | Feature 4 |
 
 New features: follow [framework.md](./framework.md#feature-spec-template) — **Status**, **Input**, **FR-00N**, **SC-00N**, **Key Entities**, Gherkin, **Agent implementation request**, **Definition of Done**.
 
@@ -40,3 +44,4 @@ Keep snapshots in sync when schema, API, or product rules change — **in the sa
 - ADRs: `docs/adr/`
 - Quality attributes (NFRs): `docs/nfr/`
 - Starter kit notes: `docs/STARTER-KIT.md`
+- Brief overview and ERD: [docs/product-overview.md](../docs/product-overview.md)

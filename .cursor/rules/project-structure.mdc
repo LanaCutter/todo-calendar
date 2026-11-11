@@ -55,7 +55,7 @@ Backend test env (`backend/.env.test`): copy from `backend/.env.test.example`; u
 
 ## Dev Ports
 *   Frontend Vite: `8083`
-*   Backend Express: `3201`
+*   Backend Express: `3200`
 *   CORS origin must match the frontend dev URL.
 
 ## Test Commands

@@ -1,6 +1,8 @@
 /**
  * Feature 1 — Class Management
+ * Feature 2 — Assignment Management (class delete guard)
  * Spec: features/feature-1-class-management.md
+ * Spec: features/feature-2-assignment-management.md
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { flushPromises } from "@vue/test-utils";
@@ -172,6 +174,27 @@ describe("Feature 1 — Class Management", () => {
 
       expect(classServices.remove).not.toHaveBeenCalled();
       expect(wrapper.text()).toContain("Biology");
+    });
+  });
+
+  describe("Feature 2 — Assignment Management", () => {
+    describe("US-2.5 — Keep a class that still has assignments", () => {
+      it("User cannot delete a class that has an assignment", async () => {
+        classServices.getAll.mockResolvedValue({
+          data: [{ id: 1, name: "Biology", color: "green" }],
+        });
+        classServices.remove.mockRejectedValue({
+          response: { data: { message: "This class still has assignments." } },
+        });
+
+        const { wrapper } = await mountClasses();
+        await clickLabel(wrapper, "Delete class");
+        await clickLabel(wrapper, "Delete");
+
+        expect(classServices.remove).toHaveBeenCalledWith(1);
+        expect(wrapper.text()).toContain("This class still has assignments.");
+        expect(wrapper.text()).toContain("Biology");
+      });
     });
   });
 });

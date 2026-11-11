@@ -162,7 +162,7 @@ Flat JSON only. No `{ success, data }` envelope.
 *   **Loading:** a progress indicator while the list request is in flight.
 *   **Error:** `<v-alert type="error">` showing the API `message`. Client-side validation uses the same messages and blocks **Save** before the request.
 
-No `MenuBar` in this feature. Feature 2 adds it.
+No sidebar in this feature. Feature 2 adds a primary-red sidebar and removes the top bar.
 
 ## Data Model Requirements
 
@@ -354,9 +354,9 @@ Do not implement behavior not in this spec. Do not add sign-in, sessions, or use
 *   Day todos and stars ([Feature 4](./feature-4-assignment-day-todos.md))
 *   Refusing to delete a class that still has assignments ([Feature 2](./feature-2-assignment-management.md))
 *   Custom colors outside the eight-color enum
-*   `MenuBar` (Feature 2)
+*   Sidebar (Feature 2)
 
 ## Delivered to Feature 2
 
-*   `/` redirects to `/classes`. Feature 2 replaces `/` with the assignment table and adds `MenuBar` links to assignments and classes.
+*   `/` redirects to `/classes`. Feature 2 replaces `/` with the assignment table and adds a sidebar linking to assignments and classes.
 *   Class delete has no "in use" check yet. Feature 2 rejects delete when assignments still reference the class.

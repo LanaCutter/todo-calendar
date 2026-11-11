@@ -33,6 +33,14 @@ const ocAcademic = {
     success: "#2E7D32",
     warning: "#E65100",
     info: "#775656",
+    maroon: "#801328",
+    blue: "#1565C0",
+    green: "#2E7D32",
+    amber: "#F9A825",
+    purple: "#6A1B9A",
+    teal: "#00897B",
+    orange: "#EF6C00",
+    slate: "#546E7A",
   },
 };
 

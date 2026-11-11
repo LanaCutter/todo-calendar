@@ -1,12 +1,20 @@
 # Data Model Reference
 
-**Status:** empty starter — no application tables yet.
-
-Update this file when a feature that defines schema merges to `dev`.
+**Status:** current through Feature 1 (Class Management).
 
 ## Tables
 
-*(none)*
+### `classes`
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `id` | INTEGER PK | Auto-increment |
+| `name` | STRING(100) | Required after trim; unique; case-insensitive uniqueness enforced in the controller |
+| `color` | STRING(20) | Required; one of `maroon`, `blue`, `green`, `amber`, `purple`, `teal`, `orange`, `slate` |
+| `createdAt` | DATE | Sequelize timestamp |
+| `updatedAt` | DATE | Sequelize timestamp |
+
+No `userId`.
 
 ## Associations
 

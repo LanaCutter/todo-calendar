@@ -1,6 +1,6 @@
 # API Reference
 
-**Status:** current through Feature 2 (Assignment Management).
+**Status:** current through Feature 4 (Assignment Day Todos).
 
 API mount path is `/api` (see `backend/server.js`). These routes are not authenticated.
 
@@ -15,8 +15,15 @@ API mount path is `/api` (see `backend/server.js`). These routes are not authent
 | `DELETE` | `/api/classes/:id` | No | Delete a class, unless assignments still use it | Feature 1, guard in Feature 2 |
 | `GET` | `/api/assignments` | No | List every assignment, soonest due date first | Feature 2 |
 | `POST` | `/api/assignments` | No | Create an assignment | Feature 2 |
+| `PUT` | `/api/assignments/:id/day-todos` | No | Replace one assignment’s todo dates | Feature 4 |
+| `PUT` | `/api/assignments/:id/completion` | No | Set an assignment completed and, when true, complete its todos | Feature 4 |
 | `PUT` | `/api/assignments/:id` | No | Update an assignment | Feature 2 |
-| `DELETE` | `/api/assignments/:id` | No | Delete an assignment | Feature 2 |
+| `DELETE` | `/api/assignments/:id` | No | Delete an assignment and its todos | Feature 2, cascade in Feature 4 |
+| `GET` | `/api/day-todos` | No | List every todo, date then name | Feature 4 |
+| `POST` | `/api/day-todos` | No | Create a todo with no assignment | Feature 4 |
+| `PUT` | `/api/day-todos/:id/completion` | No | Set one todo completed | Feature 4 |
+| `PUT` | `/api/day-todos/:id` | No | Update a todo that has no assignment | Feature 4 |
+| `DELETE` | `/api/day-todos/:id` | No | Delete a todo that has no assignment | Feature 4 |
 
 ### `POST /api/classes` and `PUT /api/classes/:id`
 
@@ -67,16 +74,75 @@ Optional dates and `dueTime` may be omitted or `null`.
   "dueDate": "2026-11-20",
   "dueTime": "23:59",
   "startWorkingBy": "2026-11-16",
+  "completed": false,
+  "dayTodos": [{ "date": "2026-11-18", "completed": false }],
   "createdAt": "2026-11-11T18:00:00.000Z",
   "updatedAt": "2026-11-11T18:00:00.000Z"
 }
 ```
 
-`dueDate`, `dueTime`, and `startWorkingBy` are `null` when unset. Dates are `YYYY-MM-DD`.
+`dueDate`, `dueTime`, and `startWorkingBy` are `null` when unset. Dates are `YYYY-MM-DD`. `completed` defaults to false. `dayTodos` is sorted by date. A new assignment has `dayTodos: []`.
 
 List order: `dueDate` ascending, undated assignments last, then `name` case-insensitively.
 
-`DELETE /api/assignments/:id` success (`200`): `{ "message": "Assignment deleted." }`
+`DELETE /api/assignments/:id` success (`200`): `{ "message": "Assignment deleted." }` Deleting an assignment deletes its day todos.
+
+### `PUT /api/assignments/:id/day-todos`
+
+```json
+{ "dates": ["2026-11-12", "2026-11-18"] }
+```
+
+`200`: `{ "dates": ["2026-11-12", "2026-11-18"] }` sorted ascending. Dates already stored keep their `completed` value. New dates are not completed. This does not change the assignment’s `completed` flag. `dates: []` removes that assignment’s todos. Duplicate dates are stored once.
+
+### `PUT /api/assignments/:id/completion`
+
+```json
+{ "completed": true }
+```
+
+`200` is the assignment, including `completed` and `dayTodos`. `true` completes the assignment and every todo that belongs to it. `false` clears only the assignment; its todos stay as they were.
+
+### `GET /api/day-todos`
+
+Each item:
+
+```json
+{
+  "id": 1,
+  "date": "2026-11-12",
+  "name": "Lab report",
+  "assignmentId": 1,
+  "class": { "id": 1, "name": "Biology", "color": "green" },
+  "completed": false
+}
+```
+
+A todo with no assignment has `assignmentId: null`, `class: null`, and its own `name`. An assignment todo’s `name` and `class` come from the assignment. Sort is `date` ascending, then `name` case-insensitively.
+
+### `POST /api/day-todos`
+
+```json
+{ "name": "Buy a notebook", "date": "2026-11-15" }
+```
+
+`201` is the list item. `assignmentId` and `class` are null. `completed` is false.
+
+### `PUT /api/day-todos/:id`
+
+Same body as create. `200` is the list item. Allowed only when `assignmentId` is null.
+
+### `PUT /api/day-todos/:id/completion`
+
+```json
+{ "completed": true }
+```
+
+`200` is the list item plus `assignmentCompleted`. That value is the assignment’s `completed` flag, or `null` when the todo has no assignment. This call does not change the assignment’s `completed` flag.
+
+### `DELETE /api/day-todos/:id`
+
+`200`: `{ "message": "Todo deleted." }` Allowed only when `assignmentId` is null.
 
 ### Errors
 
@@ -101,9 +167,18 @@ List order: `dueDate` ascending, undated assignments last, then `name` case-inse
 | `startWorkingBy` after `dueDate` | `400` | `Start working by must be on or before the due date.` |
 | Assignment `:id` is not an integer | `400` | `Assignment id must be a number.` |
 | No assignment with that id | `404` | `Assignment with id=<id> not found.` |
+| Day-todo `dates` is missing or not an array | `400` | `Dates are required.` |
+| A day-todo date is not a real calendar date | `400` | `Enter a valid date.` |
+| Standalone todo name missing or blank after trim | `400` | `Name is required.` |
+| Standalone todo name longer than 200 characters | `400` | `Name must be 200 characters or fewer.` |
+| Standalone todo date missing | `400` | `Date is required.` |
+| Update or delete targets an assignment’s todo | `400` | `Change this todo from the assignment.` |
+| Todo `:id` is not an integer | `400` | `Todo id must be a number.` |
+| No todo with that id | `404` | `Todo with id=<id> not found.` |
+| `completed` is missing or not a boolean | `400` | `Completed must be true or false.` |
 
 ## Conventions
 
 - Flat JSON responses (no `{ success, data }` envelope).
 - Errors: `{ "message": "..." }`.
-- Class and assignment routes do not use `Authorization`. Authenticated routes are not part of this product yet.
+- Class, assignment, and day-todo routes do not use `Authorization`. Authenticated routes are not part of this product yet.

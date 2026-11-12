@@ -3,11 +3,21 @@ import logger from "../config/logger.js";
 
 const Assignment = db.assignment;
 const Class = db.class;
+const DayTodo = db.dayTodo;
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_OF_DAY = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-const includeClass = [{ model: Class, as: "class", attributes: ["id", "name", "color"] }];
+const includeDetails = [
+  { model: Class, as: "class", attributes: ["id", "name", "color"] },
+  {
+    model: DayTodo,
+    as: "dayTodos",
+    attributes: ["todoDate", "completed"],
+    separate: true,
+    order: [["todoDate", "ASC"]],
+  },
+];
 
 const parseAssignmentId = (raw) => {
   if (typeof raw !== "string" || !/^[1-9]\d*$/.test(raw)) {
@@ -116,6 +126,13 @@ const toResponse = (row) => {
     dueDate: dateOnlyString(json.dueDate),
     dueTime: json.dueTime ?? null,
     startWorkingBy: dateOnlyString(json.startWorkingBy),
+    completed: Boolean(json.completed),
+    dayTodos: (json.dayTodos ?? [])
+      .map((item) => ({
+        date: dateOnlyString(item.todoDate),
+        completed: Boolean(item.completed),
+      }))
+      .sort((left, right) => left.date.localeCompare(right.date)),
     createdAt: json.createdAt,
     updatedAt: json.updatedAt,
   };
@@ -131,7 +148,7 @@ const exports = {};
 
 exports.findAll = async (_req, res) => {
   try {
-    const rows = await Assignment.findAll({ include: includeClass, order: listOrder });
+    const rows = await Assignment.findAll({ include: includeDetails, order: listOrder });
     res.send(rows.map(toResponse));
   } catch (err) {
     logger.error(err.message);
@@ -160,7 +177,7 @@ exports.create = async (req, res) => {
       dueTime: parsed.dueTime,
       startWorkingBy: parsed.startWorkingBy,
     });
-    const full = await Assignment.findByPk(created.id, { include: includeClass });
+    const full = await Assignment.findByPk(created.id, { include: includeDetails });
     res.status(201).send(toResponse(full));
   } catch (err) {
     logger.error(err.message);
@@ -201,7 +218,7 @@ exports.update = async (req, res) => {
       dueTime: parsed.dueTime,
       startWorkingBy: parsed.startWorkingBy,
     });
-    const full = await Assignment.findByPk(id, { include: includeClass });
+    const full = await Assignment.findByPk(id, { include: includeDetails });
     res.send(toResponse(full));
   } catch (err) {
     logger.error(err.message);
@@ -228,6 +245,40 @@ exports.remove = async (req, res) => {
   } catch (err) {
     logger.error(err.message);
     res.status(500).send({ message: "Unable to delete assignment." });
+  }
+};
+
+exports.setCompleted = async (req, res) => {
+  const id = parseAssignmentId(req.params.id);
+  if (id == null) {
+    res.status(400).send({ message: "Assignment id must be a number." });
+    return;
+  }
+
+  if (typeof req.body?.completed !== "boolean") {
+    res.status(400).send({ message: "Completed must be true or false." });
+    return;
+  }
+
+  try {
+    const row = await Assignment.findByPk(id);
+    if (!row) {
+      res.status(404).send({ message: `Assignment with id=${id} not found.` });
+      return;
+    }
+
+    await db.sequelize.transaction(async (transaction) => {
+      if (req.body.completed) {
+        await DayTodo.update({ completed: true }, { where: { assignmentId: id }, transaction });
+      }
+      await row.update({ completed: req.body.completed }, { transaction });
+    });
+
+    const full = await Assignment.findByPk(id, { include: includeDetails });
+    res.send(toResponse(full));
+  } catch (err) {
+    logger.error(err.message);
+    res.status(500).send({ message: "Unable to update assignment." });
   }
 };
 

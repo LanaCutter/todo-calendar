@@ -150,8 +150,8 @@ onMounted(loadClasses);
             </span>
           </td>
           <td class="text-right">
-            <v-btn icon="mdi-pencil" size="small" aria-label="Edit class" @click="openEdit(item)" />
-            <v-btn icon="mdi-delete" size="small" aria-label="Delete class" @click="openDelete(item)" />
+            <v-btn icon="mdi-pencil" size="small" variant="text" aria-label="Edit class" @click="openEdit(item)" />
+            <v-btn icon="mdi-delete" size="small" variant="text" aria-label="Delete class" @click="openDelete(item)" />
           </td>
         </tr>
       </tbody>

@@ -1,6 +1,6 @@
 # Behavior & Rules Reference
 
-**Living snapshot** of product rules currently in force on this branch (Feature 3).
+**Living snapshot** of product rules currently in force on this branch (Feature 4).
 
 These files answer: *"What rules does the app enforce right now?"*  
 They do **not** authorize new scope — implement only from `features/feature-*.md`.
@@ -22,8 +22,12 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 | Unknown class id is `404`. A non-integer id is `400`. | `Class with id=<id> not found.` / `Class id must be a number.` | Feature 1 |
 | Delete asks for confirmation. Cancel leaves the class. | Dialog **Delete this class?** | Feature 1 |
 | Empty class list shows the empty state, not an error. | "No classes yet. Add your first class." | Feature 1 |
-| `/` is the calendar home page. The sidebar shows **Todo**, then **Calendar**, **Assignments**, and **Classes**. There is no top bar. | **Calendar** at `/`; **Assignments** at `/assignments`; **Classes** at `/classes` | Feature 3 |
-| The calendar page has **Calendar** and **Todos** tabs. **Todos** does not list assignment stripes. | "No todos yet." | Feature 3 |
+| `/` is the calendar home page. The sidebar shows **Todo**, then **Calendar**, **Assignments**, **Todos**, and **Classes**. There is no top bar. | **Calendar** at `/`; **Assignments** at `/assignments`; **Todos** opens `/` with the Todos tab; **Classes** at `/classes` | Feature 3, Todos link in Feature 4 |
+| The calendar page has **Calendar** and **Todos** tabs. The Todos tab lists stored todos, not stripe days that are not todos. | Columns Done, Date, Todo, Class. Empty state "No todos yet." | Feature 3, list in Feature 4 |
+| Each assignment row has a calendar icon that replaces that assignment’s todo dates, and a Complete assignment checkbox. | `PUT /api/assignments/:id/day-todos` and `PUT /api/assignments/:id/completion` | Feature 4 |
+| A todo date on an assignment’s stripe shows a star. Completing a todo does not complete the assignment. Completing an assignment completes its todos; clearing the assignment leaves those todos as they were. | Star `aria-label` Todo or Todo completed; line-through on a completed name | Feature 4 |
+| A todo with no assignment has its own name and one date. Edit and delete apply only to those todos. | `POST`, `PUT`, and `DELETE /api/day-todos` | Feature 4 |
+| Deleting an assignment deletes its todos. Todos with no assignment remain. | `ON DELETE CASCADE` | Feature 4 |
 | A stripe keeps one lane for the month. The name is on the first day only. The due date says Due. A continued stripe has no gap between days. | Calendar stripes with `data-assignment-id`, `data-date`, and `data-color` | Feature 3 |
 | The local today cell is marked. A color key above the grid lists each class name and color. | `is-today` with `data-iso`; legend swatches with `data-color` | Feature 3 |
 | Classes are a table with name, color swatch, and row actions. | `/classes` | Feature 3 |

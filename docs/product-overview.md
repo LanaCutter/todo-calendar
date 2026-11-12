@@ -17,19 +17,19 @@ Cross off a day todo without closing the assignment. Mark an assignment complete
 | 1 | [Class Management](../features/feature-1-class-management.md) | Create, view, edit, and delete classes. Each class has a unique name and one color: maroon, blue, green, amber, purple, teal, orange, or slate. |
 | 2 | [Assignment Management](../features/feature-2-assignment-management.md) | Create, view, edit, and delete assignments. The assignment page is a table: name, class, due date, due time, and start working by. A class that still has assignments cannot be deleted. |
 | 3 | [Assignment Calendar](../features/feature-3-assignment-calendar.md) | The home page is a month calendar with **Calendar** and **Todos** tabs. Both dates set: a stripe from start-working-by through the due date, inclusive, in the class color. The name is on the first day and **Due** is on the last day. Due date only: a mark on that day. No due date: the assignment stays off the calendar and remains in the table. **Todos** is empty until day todos exist. |
-| 4 | [Assignment Day Todos](../features/feature-4-assignment-day-todos.md) | **Create todo** opens a calendar. The days you save are todos for that assignment. A star appears on the stripe for each of those days the stripe covers. Deleting the assignment deletes its todos. |
-| 5 | [Completion and Unfinished Filter](../features/feature-5-completion-and-filter.md) | Checkboxes on the assignment list, the todo list, and a calendar day. Filters **Unfinished** and **All**. |
+| 4 | [Assignment Day Todos](../features/feature-4-assignment-day-todos.md) | A calendar icon on an assignment opens a date picker. The selected days are todos and show on the **Todos** tab. The sidebar links **Todos** to that tab. The tab can also add a todo with no assignment. A star marks a todo on that assignment’s stripe. Checking a todo does not complete the assignment. Checking an assignment completes it and every todo on it. |
+| 5 | [Completion and Unfinished Filter](../features/feature-5-completion-and-filter.md) | **Unfinished** and **All** on the assignment list, the todo list, and the calendar. A calendar day dialog uses Feature 4’s completion actions. |
 
 Implement in that order, each on its own `feature/N-…` branch from `dev`.
 
 ## Screens
 
-The menu, once Feature 5 is in place, links to:
+The menu, once Feature 4 is in place, links to:
 
-*   **Calendar** (`/`) — home page. **Calendar** tab is the month of stripes. **Todos** stays empty until day todos exist. Feature 5 adds stars and a day dialog here.
-*   **Assignments** (`/assignments`) — assignment table. Feature 5 adds a **Complete assignment** checkbox.
+*   **Calendar** (`/`) — home page. **Calendar** tab is the month of stripes. **Todos** lists day todos. Feature 5 adds the unfinished filter and a day dialog here.
+*   **Assignments** (`/assignments`) — assignment table, including **Complete assignment**. Feature 5 adds **Unfinished** and **All**.
+*   **Todos** — opens the calendar **Todos** tab. Feature 5 adds **Unfinished** and **All**.
 *   **Classes** (`/classes`) — class table
-*   **Todos** (`/todos`) — Feature 5 adds one row per day todo, with a **Finish todo** checkbox
 
 Each of the first three opens showing **All**. **Unfinished** hides completed assignments (list and stripes) or completed todos (todo list and stars). The day dialog still lists every todo on that date, so a finished todo can be unchecked.
 
@@ -76,7 +76,7 @@ erDiagram
   }
 ```
 
-`Class.color` is one of the eight named colors. `Assignment.dueDate`, `Assignment.dueTime`, and `Assignment.startWorkingBy` are optional. `dueTime` is allowed only when `dueDate` is set. When both dates are set, `startWorkingBy` is on or before `dueDate`. A class cannot be deleted while an assignment points at it. Deleting an assignment deletes its day todos. `completed` on both tables is added by Feature 5 and defaults to false.
+`Class.color` is one of the eight named colors. `Assignment.dueDate`, `Assignment.dueTime`, and `Assignment.startWorkingBy` are optional. `dueTime` is allowed only when `dueDate` is set. When both dates are set, `startWorkingBy` is on or before `dueDate`. A class cannot be deleted while an assignment points at it. Deleting an assignment deletes its day todos. `completed` on both tables is added by Feature 4 and defaults to false.
 
 ## Where to read the detail
 

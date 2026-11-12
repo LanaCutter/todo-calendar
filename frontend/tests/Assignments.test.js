@@ -15,6 +15,8 @@ vi.mock("../src/services/assignmentServices.js", () => ({
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
+    replaceDayTodos: vi.fn(),
+    setCompleted: vi.fn(),
   },
 }));
 

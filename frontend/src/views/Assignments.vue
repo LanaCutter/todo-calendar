@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import AssignmentForm from "../components/AssignmentForm.vue";
+import DayTodoDialog from "../components/DayTodoDialog.vue";
 import assignmentServices from "../services/assignmentServices.js";
 import classServices from "../services/classServices.js";
 
@@ -16,6 +17,9 @@ const draft = ref(emptyDraft());
 const form = ref(null);
 const deleteOpen = ref(false);
 const deleting = ref(null);
+const todoOpen = ref(false);
+const todoAssignment = ref(null);
+const todoError = ref("");
 
 function emptyDraft() {
   return { name: "", classId: null, startWorkingBy: null, dueDate: null, dueTime: null };
@@ -36,6 +40,39 @@ async function loadAssignments() {
     error.value = err.response?.data?.message || "Unable to load assignments.";
   } finally {
     loading.value = false;
+  }
+}
+
+function openTodos(item) {
+  todoAssignment.value = item;
+  todoError.value = "";
+  todoOpen.value = true;
+}
+
+async function saveTodos(dates) {
+  todoError.value = "";
+  try {
+    await assignmentServices.replaceDayTodos(todoAssignment.value.id, { dates });
+    todoOpen.value = false;
+    await loadAssignments();
+  } catch (err) {
+    todoError.value = err.response?.data?.message || "Unable to save todos.";
+  }
+}
+
+async function completeAssignment(item, completed) {
+  if (completed === item.completed) {
+    return;
+  }
+  error.value = "";
+  try {
+    const response = await assignmentServices.setCompleted(item.id, { completed });
+    const index = assignments.value.findIndex((row) => row.id === item.id);
+    if (index >= 0) {
+      assignments.value[index] = response.data;
+    }
+  } catch (err) {
+    error.value = err.response?.data?.message || "Unable to update assignment.";
   }
 }
 
@@ -151,6 +188,7 @@ onMounted(loadAssignments);
     <v-table v-if="!loading && assignments.length" class="assignment-table">
       <thead>
         <tr>
+          <th></th>
           <th>Name</th>
           <th>Class</th>
           <th>Due date</th>
@@ -161,7 +199,15 @@ onMounted(loadAssignments);
       </thead>
       <tbody>
         <tr v-for="item in assignments" :key="item.id" class="assignment-row">
-          <td>{{ item.name }}</td>
+          <td>
+            <v-checkbox-btn
+              :model-value="Boolean(item.completed)"
+              aria-label="Complete assignment"
+              density="compact"
+              @update:model-value="(value) => completeAssignment(item, value)"
+            />
+          </td>
+          <td :class="{ 'text-decoration-line-through': item.completed }">{{ item.name }}</td>
           <td>
             <span class="d-inline-flex align-center">
               <v-sheet
@@ -179,12 +225,22 @@ onMounted(loadAssignments);
           <td>{{ item.dueTime || "" }}</td>
           <td>{{ item.startWorkingBy || "" }}</td>
           <td class="text-right">
-            <v-btn icon="mdi-pencil" size="small" aria-label="Edit assignment" @click="openEdit(item)" />
-            <v-btn icon="mdi-delete" size="small" aria-label="Delete assignment" @click="openDelete(item)" />
+            <v-btn icon="mdi-calendar" size="small" variant="text" aria-label="Create todo" @click="openTodos(item)" />
+            <v-btn icon="mdi-pencil" size="small" variant="text" aria-label="Edit assignment" @click="openEdit(item)" />
+            <v-btn icon="mdi-delete" size="small" variant="text" aria-label="Delete assignment" @click="openDelete(item)" />
           </td>
         </tr>
       </tbody>
     </v-table>
+
+    <DayTodoDialog
+      v-model="todoOpen"
+      :dates="(todoAssignment?.dayTodos ?? []).map((item) => item.date)"
+      :due-date="todoAssignment?.dueDate || ''"
+      :start-working-by="todoAssignment?.startWorkingBy || ''"
+      :error="todoError"
+      @save="saveTodos"
+    />
 
     <v-dialog v-model="formOpen" max-width="520">
       <v-card>

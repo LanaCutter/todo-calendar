@@ -13,4 +13,10 @@ export default {
   remove(id) {
     return apiClient.delete(`assignments/${id}`);
   },
+  replaceDayTodos(id, data) {
+    return apiClient.put(`assignments/${id}/day-todos`, data);
+  },
+  setCompleted(id, data) {
+    return apiClient.put(`assignments/${id}/completion`, data);
+  },
 };

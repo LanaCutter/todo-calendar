@@ -214,7 +214,7 @@ Flat JSON only. No `{ success, data }` envelope.
 *   **Class** cell: a swatch in `class.color` plus `class.name`.
 *   Empty date or time cells are blank.
 *   Row order matches **FR-005**.
-*   Row actions: **Edit assignment** (`aria-label` **Edit assignment**) and **Delete assignment** (`aria-label` **Delete assignment**).
+*   Row actions: **Edit assignment** (`aria-label` **Edit assignment**) and **Delete assignment** (`aria-label` **Delete assignment**). The icons have no button background.
 *   **Add assignment** dialog fields, in this order: **Name**, **Class** (select of existing classes by name), **Due date** (date), **Due time** (time), **Start working by** (date). Actions: **Save** and **Cancel**.
 *   When no class exists, the dialog shows "Add a class before creating an assignment." and **Save** does not submit.
 *   **Edit assignment** dialog: same fields, filled from the row. Title **Edit assignment**. Actions: **Save** and **Cancel**. Clearing a date or time and saving sends `null` for that field.

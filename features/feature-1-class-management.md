@@ -153,7 +153,7 @@ Flat JSON only. No `{ success, data }` envelope.
 *   Path: `/classes`. Until Feature 2, `/` redirects to `/classes`.
 *   Heading: **Classes**
 *   Primary action: **Add class** (`oc-cta`), which opens the add dialog. Dialog actions sit outside `v-card-title` ([ui-style-system.mdc](../.cursor/rules/ui-style-system.mdc)).
-*   Each row shows the class name and a swatch in that class's theme color (`maroon`, `blue`, `green`, `amber`, `purple`, `teal`, `orange`, `slate`).
+*   Classes are a table, like assignments. Columns: **Name**, **Color**, and the row actions. **Color** is a swatch in that class's theme color (`maroon`, `blue`, `green`, `amber`, `purple`, `teal`, `orange`, `slate`) plus the color name.
 *   Row actions: icon **Edit class** (`aria-label` **Edit class**) and icon **Delete class** (`aria-label` **Delete class**).
 *   **Add class** dialog: fields **Name** and **Color**. **Color** is a select. Visible labels: Maroon, Blue, Green, Amber, Purple, Teal, Orange, Slate. Stored values are the lowercase enum. Actions: **Save** and **Cancel**.
 *   **Edit class** dialog: same fields, filled with the current name and color. Title **Edit class**. Actions: **Save** and **Cancel**.

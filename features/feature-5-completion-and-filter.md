@@ -55,10 +55,10 @@
 - **FR-003**: Setting an assignment to completed MUST set `completed` true on that assignment and on every one of its day todos. Setting an assignment to not completed MUST set only the assignment’s `completed` to false and MUST leave each day todo’s `completed` as it was.
 - **FR-004**: `PUT /api/assignments/:id/day-todos` (Feature 4) MUST keep `completed` for a date that remains in the set. A newly added date MUST be `completed: false`. A date removed from the set MUST delete that day todo. Replacing dates MUST NOT change the assignment’s `completed` flag.
 - **FR-005**: After this feature, assignment responses MUST include `completed` and MUST replace Feature 4’s `dayTodos` string array with objects `{ "date": "YYYY-MM-DD", "completed": true|false }` sorted by `date` ascending. `GET /api/day-todos` MUST return every day todo with its assignment name, assignment `completed`, and class `name` and `color`, sorted by `todoDate` ascending, then assignment name case-insensitively.
-- **FR-006**: The assignment list (`/`), the todo list (`/todos`), and the calendar (`/calendar`) MUST each offer **Unfinished** and **All**. Each view opens on **All**. **Unfinished** hides completed rows or stripes for that view only. **All** shows completed and not-completed items. The filter MUST NOT change stored data.
+- **FR-006**: The assignment list (`/assignments`), the todo list (`/todos`), and the calendar (`/`) MUST each offer **Unfinished** and **All**. Each view opens on **All**. **Unfinished** hides completed rows or stripes for that view only. **All** shows completed and not-completed items. The filter MUST NOT change stored data.
 - **FR-007**: In **All**, a completed assignment name and a completed todo’s assignment name MUST render with a line through the name, and the completion checkbox MUST be checked. In **Unfinished** on the calendar, a completed assignment MUST NOT be drawn, and a completed day todo MUST NOT show a star. A not-completed assignment MUST still show its stripe. An unfinished todo’s star keeps `aria-label` **Todo**. A completed todo’s star, visible in **All**, uses `aria-label` **Todo completed**.
 - **FR-008**: Clicking a calendar day cell MUST open a dialog for that date. **Create todo** MUST still open the Feature 4 picker and MUST NOT open this dialog. The dialog lists every day todo on that date, finished or not, even when the calendar filter is **Unfinished**. Each row has checkbox **Finish todo** and checkbox **Complete assignment**. Checking either box saves immediately. A day with no todos shows "No todos on this day."
-- **FR-009**: The assignment list MUST include checkbox **Complete assignment** on each row. The todo list MUST include checkbox **Finish todo** on each row. The sidebar MUST link **Assignments** (`/`), **Todos** (`/todos`), **Calendar** (`/calendar`), and **Classes** (`/classes`). The Feature 3 label **Table** MUST be replaced by **Assignments**.
+- **FR-009**: The assignment list MUST include checkbox **Complete assignment** on each row. The todo list MUST include checkbox **Finish todo** on each row. The sidebar MUST link **Calendar** (`/`), **Assignments** (`/assignments`), **Todos** (`/todos`), and **Classes** (`/classes`).
 - **FR-010**: Completion endpoints MUST NOT require `Authorization`. `completed` other than boolean MUST return `400` with `{ "message": "Completed must be true or false." }`. An unknown assignment MUST return `404` with `{ "message": "Assignment with id=<id> not found." }`. A day todo that is not on that assignment MUST return `404` with `{ "message": "Todo on <date> not found." }`. A non-integer assignment id MUST return `400` with `{ "message": "Assignment id must be a number." }`.
 
 ## Assumptions
@@ -190,8 +190,8 @@ Flat JSON only.
 
 ### App chrome
 
-*   Sidebar links: **Assignments** (`/`), **Todos** (`/todos`), **Calendar** (`/calendar`), **Classes** (`/classes`).
-*   The assignment-list link label is **Assignments**, not **Table**.
+*   Sidebar links: **Calendar** (`/`), **Assignments** (`/assignments`), **Todos** (`/todos`), **Classes** (`/classes`).
+*   The assignment-list link label is **Assignments**.
 
 ### [View: Assignments] — route name `assignments`
 

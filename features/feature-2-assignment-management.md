@@ -489,10 +489,10 @@ Do not implement behavior not in this spec. Do not add sign-in, sessions, userId
 *   Sign-in, registration, sessions, and route protection
 *   Calendar stripes and month navigation ([Feature 3](./feature-3-assignment-calendar.md))
 *   Day todos, stars, and deleting day todos with an assignment ([Feature 4](./feature-4-assignment-day-todos.md))
-*   Renaming **Assignments** in the sidebar (Feature 3 labels the table link **Table**; [Feature 5](./feature-5-completion-and-filter.md) names it **Assignments** again)
+*   Moving the assignment table off `/` (Feature 3 makes `/` the calendar and puts the table at `/assignments`)
 *   Completion checkboxes and the unfinished/all filter ([Feature 5](./feature-5-completion-and-filter.md))
 *   More than one user
 
 ## Delivered to Feature 3
 
-*   The assignment table lives at `/` with a primary-red `Sidebar` and no top bar. Links are **Assignments** and **Classes**. Feature 3 adds `/calendar` and labels the table link **Table**.
+*   The assignment table lives at `/` with a primary-red `Sidebar` and no top bar. Links are **Assignments** and **Classes**. Feature 3 makes `/` the calendar and moves this table to `/assignments`.

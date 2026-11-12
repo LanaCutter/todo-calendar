@@ -135,8 +135,9 @@ onMounted(loadAssignments);
 </script>
 
 <template>
-  <v-container class="py-8">
-    <div class="d-flex align-center justify-space-between mb-6">
+  <v-container class="py-6">
+    <v-card class="page-card pa-6" rounded="lg" elevation="0">
+    <div class="d-flex align-center justify-space-between flex-wrap ga-4 mb-6">
       <h1 class="text-h4">Assignments</h1>
       <v-btn color="primary" variant="elevated" class="oc-cta" @click="openAdd">Add assignment</v-btn>
     </div>
@@ -213,5 +214,6 @@ onMounted(loadAssignments);
         </v-card-actions>
       </v-card>
     </v-dialog>
+    </v-card>
   </v-container>
 </template>

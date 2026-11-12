@@ -15,8 +15,8 @@ Cross off a day todo without closing the assignment. Mark an assignment complete
 | Feature | Spec | What it adds |
 |---------|------|----------------|
 | 1 | [Class Management](../features/feature-1-class-management.md) | Create, view, edit, and delete classes. Each class has a unique name and one color: maroon, blue, green, amber, purple, teal, orange, or slate. |
-| 2 | [Assignment Management](../features/feature-2-assignment-management.md) | Create, view, edit, and delete assignments. The home page is a table: name, class, start working by, due date, and due time. A class that still has assignments cannot be deleted. |
-| 3 | [Assignment Calendar](../features/feature-3-assignment-calendar.md) | A month calendar. Both dates set: a stripe from start-working-by through the due date, inclusive, in the class color. Due date only: a mark on that day. No due date: the assignment stays off the calendar and remains in the table. |
+| 2 | [Assignment Management](../features/feature-2-assignment-management.md) | Create, view, edit, and delete assignments. The assignment page is a table: name, class, due date, due time, and start working by. A class that still has assignments cannot be deleted. |
+| 3 | [Assignment Calendar](../features/feature-3-assignment-calendar.md) | The home page is a month calendar with **Calendar** and **Todos** tabs. Both dates set: a stripe from start-working-by through the due date, inclusive, in the class color. The name is on the first day and **Due** is on the last day. Due date only: a mark on that day. No due date: the assignment stays off the calendar and remains in the table. **Todos** is empty until day todos exist. |
 | 4 | [Assignment Day Todos](../features/feature-4-assignment-day-todos.md) | **Create todo** opens a calendar. The days you save are todos for that assignment. A star appears on the stripe for each of those days the stripe covers. Deleting the assignment deletes its todos. |
 | 5 | [Completion and Unfinished Filter](../features/feature-5-completion-and-filter.md) | Checkboxes on the assignment list, the todo list, and a calendar day. Filters **Unfinished** and **All**. |
 
@@ -26,10 +26,10 @@ Implement in that order, each on its own `feature/N-…` branch from `dev`.
 
 The menu, once Feature 5 is in place, links to:
 
-*   **Assignments** (`/`) — assignment table, with a **Complete assignment** checkbox
-*   **Todos** (`/todos`) — one row per day todo, with a **Finish todo** checkbox
-*   **Calendar** (`/calendar`) — month of stripes and stars; click a day to finish that day’s todo or the whole assignment
-*   **Classes** (`/classes`) — class list
+*   **Calendar** (`/`) — home page. **Calendar** tab is the month of stripes. **Todos** stays empty until day todos exist. Feature 5 adds stars and a day dialog here.
+*   **Assignments** (`/assignments`) — assignment table. Feature 5 adds a **Complete assignment** checkbox.
+*   **Classes** (`/classes`) — class table
+*   **Todos** (`/todos`) — Feature 5 adds one row per day todo, with a **Finish todo** checkbox
 
 Each of the first three opens showing **All**. **Unfinished** hides completed assignments (list and stripes) or completed todos (todo list and stars). The day dialog still lists every todo on that date, so a finished todo can be unchecked.
 

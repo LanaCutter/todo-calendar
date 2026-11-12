@@ -11,6 +11,13 @@ const formError = ref("");
 const saving = ref(false);
 const editingId = ref(null);
 const draft = ref({ name: "", color: null });
+
+function colorLabel(color) {
+  if (!color) {
+    return "";
+  }
+  return color.charAt(0).toUpperCase() + color.slice(1);
+}
 const form = ref(null);
 const deleteOpen = ref(false);
 const deleting = ref(null);
@@ -105,8 +112,9 @@ onMounted(loadClasses);
 </script>
 
 <template>
-  <v-container class="py-8">
-    <div class="d-flex align-center justify-space-between mb-6">
+  <v-container class="py-6">
+    <v-card class="page-card pa-6" rounded="lg" elevation="0">
+    <div class="d-flex align-center justify-space-between flex-wrap ga-4 mb-6">
       <h1 class="text-h4">Classes</h1>
       <v-btn color="primary" variant="elevated" class="oc-cta" @click="openAdd">Add class</v-btn>
     </div>
@@ -117,25 +125,37 @@ onMounted(loadClasses);
 
     <p v-if="!loading && classes.length === 0 && !error">No classes yet. Add your first class.</p>
 
-    <v-list v-if="!loading && classes.length" lines="two" class="bg-transparent">
-      <v-list-item v-for="item in classes" :key="item.id" class="class-row">
-        <template #prepend>
-          <v-sheet
-            :color="item.color"
-            width="24"
-            height="24"
-            rounded
-            class="class-swatch"
-            :data-color="item.color"
-          />
-        </template>
-        <v-list-item-title>{{ item.name }}</v-list-item-title>
-        <template #append>
-          <v-btn icon="mdi-pencil" size="small" aria-label="Edit class" @click="openEdit(item)" />
-          <v-btn icon="mdi-delete" size="small" aria-label="Delete class" @click="openDelete(item)" />
-        </template>
-      </v-list-item>
-    </v-list>
+    <v-table v-if="!loading && classes.length" class="class-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Color</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in classes" :key="item.id" class="class-row">
+          <td>{{ item.name }}</td>
+          <td>
+            <span class="d-inline-flex align-center">
+              <v-sheet
+                :color="item.color"
+                width="16"
+                height="16"
+                rounded
+                class="class-swatch mr-2"
+                :data-color="item.color"
+              />
+              {{ colorLabel(item.color) }}
+            </span>
+          </td>
+          <td class="text-right">
+            <v-btn icon="mdi-pencil" size="small" aria-label="Edit class" @click="openEdit(item)" />
+            <v-btn icon="mdi-delete" size="small" aria-label="Delete class" @click="openDelete(item)" />
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
 
     <v-dialog v-model="formOpen" max-width="480">
       <v-card>
@@ -162,5 +182,6 @@ onMounted(loadClasses);
         </v-card-actions>
       </v-card>
     </v-dialog>
+    </v-card>
   </v-container>
 </template>

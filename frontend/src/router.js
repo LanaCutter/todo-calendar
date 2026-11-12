@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Assignments from "./views/Assignments.vue";
+import Calendar from "./views/Calendar.vue";
 import Classes from "./views/Classes.vue";
 
 const router = createRouter({
@@ -7,6 +8,11 @@ const router = createRouter({
   routes: [
     {
       path: "/",
+      name: "calendar",
+      component: Calendar,
+    },
+    {
+      path: "/assignments",
       name: "assignments",
       component: Assignments,
     },
@@ -17,7 +23,7 @@ const router = createRouter({
     },
     {
       path: "/:pathMatch(.*)*",
-      redirect: { name: "assignments" },
+      redirect: { name: "calendar" },
     },
   ],
 });

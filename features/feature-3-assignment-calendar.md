@@ -16,7 +16,7 @@
 **So that** I can pick the view that matches how I am planning
 
 **Priority:** P1
-**Independent test:** From the assignment table, open **Calendar** and see the month grid; open **Table** and see the assignment table again
+**Independent test:** From the assignment table, open **Calendar** and land on the home page month grid; open **Assignments** and see the assignment table again. **Todos** does not list the assignment’s span days.
 **Acceptance scenarios:** see ### US-3.1 under Acceptance Criteria
 
 ### US-3.2: See assignment stripes
@@ -37,12 +37,14 @@
 - **FR-003**: When both `startWorkingBy` and `dueDate` are set, the assignment MUST appear on every calendar day from `startWorkingBy` through `dueDate`, inclusive. `dueTime` MUST NOT change which days are drawn.
 - **FR-004**: When `dueDate` is set and `startWorkingBy` is empty, the assignment MUST appear only on `dueDate`.
 - **FR-005**: When `dueDate` is empty, the assignment MUST NOT appear on the calendar. That includes a start-working-by date with no due date, and an assignment with neither date.
-- **FR-006**: Each drawn day MUST show the assignment name on a stripe in the class color (`class.color`). The stripe element MUST set `data-assignment-id` to the assignment id, `data-date` to that day as `YYYY-MM-DD`, and `data-color` to the class color enum value.
+- **FR-006**: Each drawn day MUST include a stripe in the class color (`class.color`). The stripe element MUST set `data-assignment-id` to the assignment id, `data-date` to that day as `YYYY-MM-DD`, and `data-color` to the class color enum value. The assignment name appears only on the first day of that assignment’s range. The due date says **Due**. Days in between are the color bar with no name. One assignment keeps a single lane for the whole month, so another assignment on one of those days does not move its stripe. A stripe that continues into the next day in the same week runs through the shared edge with no gap.
 - **FR-007**: A span that crosses months MUST show only the days that fall in the visible month. Moving to the next or previous month MUST show the rest of the span.
 - **FR-008**: Two assignments on the same day MUST both be visible that day.
 - **FR-009**: The month grid MUST still render when nothing is drawn. When the visible month has no stripe, the page MUST show "No assignments on this month's calendar." When the month has a stripe, that message MUST NOT appear.
-- **FR-010**: The sidebar MUST link **Table** to `/`, **Calendar** to `/calendar`, and **Classes** to `/classes`. The Feature 2 label **Assignments** on the table link MUST be replaced by **Table**. The sidebar stays theme color `primary` with no top bar.
+- **FR-010**: `/` MUST be the calendar and is the home page. The assignment table MUST live at `/assignments`. The sidebar MUST show the app name **Todo**, then link **Calendar** to `/`, **Assignments** to `/assignments`, and **Classes** to `/classes`. The sidebar stays theme color `primary` with no top bar. The calendar page MUST offer tabs **Calendar** and **Todos**. **Calendar** shows the month grid. **Todos** does not list assignment stripes. Day todos are not part of this feature, so the tab shows "No todos yet."
 - **FR-011**: Build the month grid with Vue and Vuetify. Do not add a calendar library.
+- **FR-012**: The cell for the student's local today MUST be marked, including when that date is a neighboring-month cell in the grid. The cell MUST have class `is-today` and `data-iso` set to that date as `YYYY-MM-DD`. The day number MUST be visually distinct from the other days.
+- **FR-013**: Above the month grid, the **Calendar** tab MUST show a color key of every class from `GET /api/classes`. Each entry MUST show a swatch with `data-color` set to the class color and the class name. Order follows the API. When there are no classes, the key is not shown.
 
 ## Assumptions
 
@@ -89,7 +91,7 @@ No new entity.
 
 ## API Requirements
 
-No new or changed endpoints. The calendar calls existing `GET /api/assignments`.
+No new or changed endpoints. The calendar calls existing `GET /api/assignments` and `GET /api/classes`.
 
 A stripe is drawn from fields already on that payload:
 
@@ -105,21 +107,26 @@ A stripe is drawn from fields already on that payload:
 
 ### App chrome
 
-*   Sidebar links: **Table** (`/`, route `assignments`), **Calendar** (`/calendar`, route `calendar`), **Classes** (`/classes`).
-*   The table link label is **Table**, not **Assignments**.
+*   The sidebar shows **Todo** at the top.
+*   Sidebar links: **Calendar** (`/`, route `calendar`), **Assignments** (`/assignments`, route `assignments`), **Classes** (`/classes`).
+*   The assignment-list link is **Assignments**.
 
 ### [View: Calendar] — route name `calendar`
 
-*   Path: `/calendar`. Heading is the visible month and year, for example **November 2026**.
+*   Path: `/`. This is the home page. Heading is the visible month and year, for example **November 2026**.
+*   Tabs: **Calendar** and **Todos**. **Calendar** is selected when the page opens.
+*   **Todos** is not a list of assignment stripes. Day todos are Feature 4. This tab shows "No todos yet."
 *   Controls: **Previous month** (`aria-label` **Previous month**) and **Next month** (`aria-label` **Next month**).
+*   Above the month grid, a color key lists each class: a swatch in `class.color` and the class name. No classes means no key.
+*   The cell for local today has class `is-today`. Its day number is filled with theme color `primary`.
 *   Month grid: week rows that cover the month, columns Sunday through Saturday. Days from neighboring months may show in the grid and MUST NOT show stripes. A stripe is drawn only on a date that belongs to the heading's month and is inside the assignment's range (**FR-007**).
-*   On each day in an assignment’s drawn range, a stripe shows the assignment **name** in the class color, with `data-assignment-id`, `data-date`, and `data-color` as in **FR-006**.
+*   On each day in an assignment’s drawn range, a thin stripe uses the class color, with `data-assignment-id`, `data-date`, and `data-color` as in **FR-006**. The assignment name is on the first day of the range only. The due date says **Due**. A continued stripe meets the next day with no gap. Each assignment stays in one lane for the month.
 *   Implement the grid with Vuetify layout components. No new calendar dependency. No raw hex in the view; use the theme color name.
 *   **Empty state:** the grid remains, and the page shows "No assignments on this month's calendar."
 *   **Loading:** a progress indicator while assignments are loading.
 *   **Error:** `<v-alert type="error">` with the API `message`.
 
-The assignment table itself is unchanged aside from the menu label **Table**.
+The assignment table itself is unchanged aside from its path `/assignments` and the sidebar label **Assignments**. Classes are shown in a table with columns **Name** and **Color**, plus the same edit and delete actions.
 
 ## Data Model Requirements
 
@@ -132,14 +139,21 @@ No schema changes. Assignments and classes stay as in Feature 2 and Feature 1.
 #### Scenario: User opens the calendar from the menu
 *   **Given** I am on the assignment table
 *   **When** I click **Calendar**
-*   **Then** I am on `/calendar`
+*   **Then** I am on `/`
 *   **And** I see a month grid and a heading with the month and year
 
 #### Scenario: User returns to the assignment table from the menu
 *   **Given** I am on the calendar
-*   **When** I click **Table**
-*   **Then** I am on `/`
+*   **When** I click **Assignments**
+*   **Then** I am on `/assignments`
 *   **And** I see the assignment table
+
+#### Scenario: User does not see assignment days as todos
+*   **Given** assignment `Lab report` has `startWorkingBy` `2026-11-09` and `dueDate` `2026-11-13`
+*   **And** the calendar is showing November 2026
+*   **When** I click **Todos**
+*   **Then** I see "No todos yet."
+*   **And** Lab report is not listed there as a todo
 
 ### US-3.2 — See assignment stripes
 
@@ -150,6 +164,8 @@ No schema changes. Assignments and classes stay as in Feature 2 and Feature 1.
 *   **When** the calendar finishes loading
 *   **Then** Lab report is drawn on `2026-11-09`, `2026-11-10`, `2026-11-11`, `2026-11-12`, and `2026-11-13`
 *   **And** each of those stripes has `data-assignment-id` `1`, `data-color` `green`, and `data-date` of that day
+*   **And** the name Lab report is only on `2026-11-09`
+*   **And** `2026-11-13` says Due
 
 #### Scenario: User sees a one-day mark when only the due date is set
 *   **Given** assignment `Quiz` has due date `2026-11-18` and no start working by date
@@ -193,13 +209,27 @@ No schema changes. Assignments and classes stay as in Feature 2 and Feature 1.
 *   **Given** `Lab report` and `Quiz` are both drawn on `2026-11-13`
 *   **And** the calendar is showing November 2026
 *   **When** the calendar finishes loading
-*   **Then** `2026-11-13` shows both Lab report and Quiz
+*   **Then** `2026-11-13` shows a stripe for Lab report and a stripe for Quiz
+*   **And** Lab report’s stripe on that day says Due
+*   **And** Quiz’s stripe on that day shows Quiz
 
 #### Scenario: Due time does not change the stripe days
 *   **Given** assignment `Lab report` has `startWorkingBy` `2026-11-09`, `dueDate` `2026-11-13`, and `dueTime` `09:00`
 *   **And** the calendar is showing November 2026
 *   **When** the calendar finishes loading
 *   **Then** Lab report is drawn on each day from `2026-11-09` through `2026-11-13`
+
+#### Scenario: User sees today marked on the calendar
+*   **Given** the calendar is showing the current local month
+*   **When** the calendar finishes loading
+*   **Then** the cell for today's date has class `is-today` and `data-iso` of that date
+
+#### Scenario: User sees a color key for each class
+*   **Given** class `Biology` has color `green`
+*   **And** class `History` has color `amber`
+*   **And** the calendar is showing November 2026
+*   **When** the calendar finishes loading
+*   **Then** the color key lists Biology with `data-color` `green` and History with `data-color` `amber`
 
 #### Scenario: User sees an empty month message when nothing is drawn
 *   **Given** no assignment has a due date in December 2026 or a span that includes a day in December 2026
@@ -216,6 +246,7 @@ Each scenario above must map to at least one automated test. `it` names match th
 |-------|----------|-----------|-----------|
 | US-3.1 | User opens the calendar from the menu | `frontend/tests/Calendar.test.js` | `User opens the calendar from the menu` |
 | US-3.1 | User returns to the assignment table from the menu | `frontend/tests/Calendar.test.js` | `User returns to the assignment table from the menu` |
+| US-3.1 | User does not see assignment days as todos | `frontend/tests/Calendar.test.js` | `User does not see assignment days as todos` |
 | US-3.2 | User sees a stripe from start working by through the due date | `frontend/tests/Calendar.test.js` | `User sees a stripe from start working by through the due date` |
 | US-3.2 | User sees a one-day mark when only the due date is set | `frontend/tests/Calendar.test.js` | `User sees a one-day mark when only the due date is set` |
 | US-3.2 | User sees a one-day stripe when start and due are the same day | `frontend/tests/Calendar.test.js` | `User sees a one-day stripe when start and due are the same day` |
@@ -225,6 +256,8 @@ Each scenario above must map to at least one automated test. `it` names match th
 | US-3.2 | User sees the rest of a stripe in the next month | `frontend/tests/Calendar.test.js` | `User sees the rest of a stripe in the next month` |
 | US-3.2 | User sees two assignments on the same day | `frontend/tests/Calendar.test.js` | `User sees two assignments on the same day` |
 | US-3.2 | Due time does not change the stripe days | `frontend/tests/Calendar.test.js` | `Due time does not change the stripe days` |
+| US-3.2 | User sees today marked on the calendar | `frontend/tests/Calendar.test.js` | `User sees today marked on the calendar` |
+| US-3.2 | User sees a color key for each class | `frontend/tests/Calendar.test.js` | `User sees a color key for each class` |
 | US-3.2 | User sees an empty month message when nothing is drawn | `frontend/tests/Calendar.test.js` | `User sees an empty month message when nothing is drawn` |
 
 ## Agent implementation request

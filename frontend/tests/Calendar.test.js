@@ -10,6 +10,7 @@ import Assignments from "../src/views/Assignments.vue";
 import Calendar from "../src/views/Calendar.vue";
 import assignmentServices from "../src/services/assignmentServices.js";
 import classServices from "../src/services/classServices.js";
+import dayTodoServices from "../src/services/dayTodoServices.js";
 import { mountWithPlugins } from "./testUtils.js";
 
 vi.mock("../src/services/assignmentServices.js", () => ({
@@ -24,6 +25,16 @@ vi.mock("../src/services/assignmentServices.js", () => ({
 vi.mock("../src/services/classServices.js", () => ({
   default: {
     getAll: vi.fn(),
+  },
+}));
+
+vi.mock("../src/services/dayTodoServices.js", () => ({
+  default: {
+    getAll: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+    setCompleted: vi.fn(),
   },
 }));
 
@@ -97,6 +108,7 @@ describe("Feature 3 — Assignment Calendar", () => {
     classServices.getAll.mockReset();
     assignmentServices.getAll.mockResolvedValue({ data: [] });
     classServices.getAll.mockResolvedValue({ data: [biology] });
+    dayTodoServices.getAll.mockResolvedValue({ data: [] });
   });
 
   describe("US-3.1 — Switch between table and calendar", () => {

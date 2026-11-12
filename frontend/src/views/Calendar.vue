@@ -1,7 +1,10 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import assignmentServices from "../services/assignmentServices.js";
 import classServices from "../services/classServices.js";
+import dayTodoServices from "../services/dayTodoServices.js";
+import TodoDialog from "../components/TodoDialog.vue";
 
 const props = defineProps({
   showing: {
@@ -10,15 +13,40 @@ const props = defineProps({
   },
 });
 
+const route = useRoute();
+const router = useRouter();
+
 const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const assignments = ref([]);
 const classes = ref([]);
+const todos = ref([]);
 const loading = ref(true);
 const error = ref("");
 const year = ref(0);
 const monthIndex = ref(0);
-const tab = ref("calendar");
+const tabName = ref("calendar");
+const tab = computed({
+  get() {
+    return tabName.value;
+  },
+  set(value) {
+    tabName.value = value === "todos" ? "todos" : "calendar";
+    router.replace(tabName.value === "todos" ? { path: "/", query: { tab: "todos" } } : { path: "/" });
+  },
+});
+watch(
+  () => route.query.tab,
+  (value) => {
+    tabName.value = value === "todos" ? "todos" : "calendar";
+  },
+  { immediate: true },
+);
+const todoOpen = ref(false);
+const editingTodo = ref(null);
+const todoDialog = ref(null);
+const deleteOpen = ref(false);
+const deletingTodo = ref(null);
 
 const initial = initialMonth(props.showing);
 year.value = initial.year;
@@ -66,16 +94,8 @@ function rangeStart(assignment) {
   return assignment.dueDate;
 }
 
-function stripeLabel(assignment, iso) {
-  const start = rangeStart(assignment);
-  const parts = [];
-  if (iso === start) {
-    parts.push(assignment.name);
-  }
-  if (iso === assignment.dueDate) {
-    parts.push("Due");
-  }
-  return parts.join(" · ");
+function showsName(assignment, iso) {
+  return iso === rangeStart(assignment);
 }
 
 function neighborIso(iso, delta) {
@@ -146,6 +166,10 @@ function covers(assignment, iso) {
   return iso === assignment.dueDate;
 }
 
+function todoFor(assignment, iso) {
+  return (assignment.dayTodos ?? []).find((item) => item.date === iso) ?? null;
+}
+
 function stripesOn(iso) {
   return assignments.value.filter((assignment) => covers(assignment, iso));
 }
@@ -160,15 +184,18 @@ async function loadCalendar() {
   loading.value = true;
   error.value = "";
   try {
-    const [assignmentResponse, classResponse] = await Promise.all([
+    const [assignmentResponse, classResponse, todoResponse] = await Promise.all([
       assignmentServices.getAll(),
       classServices.getAll(),
+      dayTodoServices.getAll(),
     ]);
     assignments.value = assignmentResponse.data;
     classes.value = classResponse.data;
+    todos.value = todoResponse.data;
   } catch (err) {
     assignments.value = [];
     classes.value = [];
+    todos.value = [];
     error.value = err.response?.data?.message || "Unable to load assignments.";
   } finally {
     loading.value = false;
@@ -176,6 +203,66 @@ async function loadCalendar() {
 }
 
 onMounted(loadCalendar);
+
+function openAddTodo() {
+  editingTodo.value = null;
+  todoOpen.value = true;
+}
+
+function openEditTodo(todo) {
+  editingTodo.value = todo;
+  todoOpen.value = true;
+}
+
+function openDeleteTodo(todo) {
+  deletingTodo.value = todo;
+  deleteOpen.value = true;
+}
+
+async function saveTodo(payload) {
+  try {
+    if (editingTodo.value) {
+      await dayTodoServices.update(editingTodo.value.id, payload);
+    } else {
+      await dayTodoServices.create(payload);
+    }
+    todoOpen.value = false;
+    await loadCalendar();
+  } catch (err) {
+    todoDialog.value?.showError(err.response?.data?.message || "Unable to save todo.");
+  }
+}
+
+async function confirmDeleteTodo() {
+  try {
+    await dayTodoServices.remove(deletingTodo.value.id);
+    deleteOpen.value = false;
+    await loadCalendar();
+  } catch (err) {
+    error.value = err.response?.data?.message || "Unable to delete todo.";
+  }
+}
+
+async function finishTodo(todo, completed) {
+  if (completed === todo.completed) {
+    return;
+  }
+  error.value = "";
+  try {
+    const response = await dayTodoServices.setCompleted(todo.id, { completed });
+    const index = todos.value.findIndex((item) => item.id === todo.id);
+    if (index >= 0) {
+      todos.value[index] = { ...todos.value[index], completed: response.data.completed };
+    }
+    const assignment = assignments.value.find((item) => item.id === todo.assignmentId);
+    const day = assignment?.dayTodos?.find((item) => item.date === todo.date);
+    if (day) {
+      day.completed = response.data.completed;
+    }
+  } catch (err) {
+    error.value = err.response?.data?.message || "Unable to update todo.";
+  }
+}
 </script>
 
 <template>
@@ -238,7 +325,17 @@ onMounted(loadCalendar);
                       :data-date="day.iso"
                       :data-color="assignment.class.color"
                     >
-                      {{ stripeLabel(assignment, day.iso) }}
+                      <span
+                        v-if="todoFor(assignment, day.iso)"
+                        class="todo-star"
+                        :aria-label="todoFor(assignment, day.iso).completed ? 'Todo completed' : 'Todo'"
+                      >★</span>
+                      <span
+                        v-if="showsName(assignment, day.iso)"
+                        class="stripe-name"
+                        :class="{ 'text-decoration-line-through': assignment.completed }"
+                      >{{ assignment.name }}</span>
+                      <span v-if="day.iso === assignment.dueDate" class="stripe-due">Due</span>
                     </div>
                   </div>
                 </div>
@@ -249,10 +346,68 @@ onMounted(loadCalendar);
         </v-window-item>
 
         <v-window-item value="todos">
-          <p class="todos-empty">No todos yet.</p>
+          <div class="d-flex justify-end mb-4">
+            <v-btn color="primary" variant="elevated" class="oc-cta" @click="openAddTodo">Add todo</v-btn>
+          </div>
+          <p v-if="!loading && !error && todos.length === 0" class="todos-empty">No todos yet.</p>
+          <v-table v-if="todos.length" class="todo-table">
+            <thead>
+              <tr>
+                <th>Done</th>
+                <th>Date</th>
+                <th>Todo</th>
+                <th>Class</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="todo in todos" :key="todo.id" class="todo-row">
+                <td>
+                  <v-checkbox-btn
+                    :model-value="Boolean(todo.completed)"
+                    aria-label="Finish todo"
+                    density="compact"
+                    @update:model-value="(value) => finishTodo(todo, value)"
+                  />
+                </td>
+                <td>{{ todo.date }}</td>
+                <td :class="{ 'text-decoration-line-through': todo.completed }">{{ todo.name }}</td>
+                <td>
+                  <span v-if="todo.class" class="d-inline-flex align-center">
+                    <v-sheet
+                      :color="todo.class.color"
+                      width="12"
+                      height="12"
+                      rounded
+                      class="mr-2"
+                      :data-color="todo.class.color"
+                    />
+                    {{ todo.class.name }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  <template v-if="todo.assignmentId == null">
+                    <v-btn icon="mdi-pencil" size="small" variant="text" aria-label="Edit todo" @click="openEditTodo(todo)" />
+                    <v-btn icon="mdi-delete" size="small" variant="text" aria-label="Delete todo" @click="openDeleteTodo(todo)" />
+                  </template>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
         </v-window-item>
       </v-window>
     </v-card>
+    <TodoDialog ref="todoDialog" v-model="todoOpen" :todo="editingTodo" @save="saveTodo" />
+    <v-dialog v-model="deleteOpen" max-width="420">
+      <v-card>
+        <v-card-text class="pt-6">Delete this todo?</v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn color="secondary" variant="text" @click="deleteOpen = false">Cancel</v-btn>
+          <v-btn color="primary" variant="elevated" class="oc-cta" @click="confirmDeleteTodo">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -361,11 +516,13 @@ onMounted(loadCalendar);
   right: 0;
   bottom: 0;
   left: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
   overflow: hidden;
   font-size: 9px;
   line-height: 12px;
   white-space: nowrap;
-  text-overflow: ellipsis;
   padding: 0 3px;
   z-index: 1;
 }
@@ -390,5 +547,20 @@ onMounted(loadCalendar);
 
 .assignment-stripe.continues-right {
   right: -1px;
+}
+
+.todo-star,
+.stripe-due {
+  flex: none;
+}
+
+.stripe-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stripe-due {
+  margin-left: auto;
 }
 </style>

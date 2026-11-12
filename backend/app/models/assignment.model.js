@@ -22,6 +22,11 @@ export default (sequelize, Sequelize) => {
         type: Sequelize.DATEONLY,
         allowNull: true,
       },
+      completed: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
     },
     {
       tableName: "assignments",

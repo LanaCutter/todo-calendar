@@ -210,7 +210,7 @@ Flat JSON only. No `{ success, data }` envelope.
 
 *   Path: `/`. Heading: **Assignments**
 *   Primary action: **Add assignment** (`oc-cta`), opening the add dialog. Dialog actions sit outside `v-card-title`.
-*   Table columns: **Name**, **Class**, **Due date**, **Due time**, **Start working by**.
+*   Table columns: **Name**, **Class**, **Due time**, **Start working by**. The due date is a heading listed once before the assignments due that day. Assignments with no due date are grouped under **No due date**.
 *   **Class** cell: a swatch in `class.color` plus `class.name`.
 *   Empty date or time cells are blank.
 *   Row order matches **FR-005**.

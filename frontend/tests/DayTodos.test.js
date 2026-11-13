@@ -136,6 +136,16 @@ async function clickLabel(root, label) {
   await flushPromises();
 }
 
+async function choose(root, scope, label) {
+  const button = root
+    .find(`[data-filter="${scope}"]`)
+    .findAll("button")
+    .find((item) => item.text().trim() === label);
+  expect(button, `${scope} ${label}`).toBeTruthy();
+  await button.trigger("click");
+  await flushPromises();
+}
+
 async function openTodosTab(root) {
   const todos = root.findAll(".v-tab").find((item) => item.text().trim() === "Todos");
   expect(todos).toBeTruthy();
@@ -235,7 +245,7 @@ describe("Feature 4 — Assignment Day Todos", () => {
 
       const rows = page.findAll(".todo-row");
       expect(rows).toHaveLength(1);
-      expect(rows[0].text()).toContain("2026-11-12");
+      expect(page.find('.date-heading[data-date="2026-11-12"]').exists()).toBe(true);
       expect(rows[0].text()).toContain("Lab report");
       expect(rows[0].text()).toContain("Biology");
     });
@@ -251,6 +261,8 @@ describe("Feature 4 — Assignment Day Todos", () => {
 
       expect(router.currentRoute.value.path).toBe("/");
       expect(router.currentRoute.value.query.tab).toBe("todos");
+      const active = page.findAll(".v-list-item--active").map((item) => item.text().trim());
+      expect(active).toEqual(["Todos"]);
       const tab = page.findAll(".v-tab").find((item) => item.text().trim() === "Todos");
       expect(tab.attributes("aria-selected")).toBe("true");
     });
@@ -280,13 +292,21 @@ describe("Feature 4 — Assignment Day Todos", () => {
       });
       const { wrapper: page } = await mountApp("/");
 
-      expect(page.find(".todo-star").exists()).toBe(false);
+      expect(page.find(".assignment-stripe").exists()).toBe(false);
+      const mark = page.find('.day-todo-mark[data-date="2026-11-04"]');
+      expect(mark.text()).toContain("Reading");
+      expect(mark.find(".todo-star").attributes("aria-label")).toBe("Todo");
       await openTodosTab(page);
-      expect(page.find(".todo-row").text()).toContain("2026-11-04");
+      expect(page.find('.date-heading[data-date="2026-11-04"]').exists()).toBe(true);
       expect(page.find(".todo-row").text()).toContain("Reading");
 
       const link = page.findAll("a").find((item) => item.text().trim() === "Assignments");
+      const push = vi.spyOn(page.vm.$router, "push");
       await link.trigger("click");
+      if (push.mock.results[0]) {
+        await push.mock.results[0].value;
+      }
+      push.mockRestore();
       await flushPromises();
       await clickLabel(page, "Create todo");
       expect(page.find('[data-date="2026-11-04"]').attributes("aria-pressed")).toBe("true");
@@ -347,9 +367,8 @@ describe("Feature 4 — Assignment Day Todos", () => {
       expect(stripe(page, 1, "2026-11-11").find(".todo-star").exists()).toBe(true);
       expect(stripe(page, 1, "2026-11-12").find(".todo-star").exists()).toBe(false);
       await openTodosTab(page);
-      const listed = page.findAll(".todo-row").map((row) => row.text());
-      expect(listed.join(" ")).not.toContain("2026-11-12");
-      expect(listed.join(" ")).toContain("2026-11-11");
+      expect(page.find('.date-heading[data-date="2026-11-12"]').exists()).toBe(false);
+      expect(page.find('.date-heading[data-date="2026-11-11"]').exists()).toBe(true);
     });
   });
 
@@ -371,7 +390,7 @@ describe("Feature 4 — Assignment Day Todos", () => {
 
       expect(dayTodoServices.create).toHaveBeenCalledWith({ name: "Buy a notebook", date: "2026-11-15" });
       const row = page.find(".todo-row");
-      expect(row.text()).toContain("2026-11-15");
+      expect(page.find('.date-heading[data-date="2026-11-15"]').exists()).toBe(true);
       expect(row.text()).toContain("Buy a notebook");
       expect(row.text()).not.toContain("Biology");
     });
@@ -392,7 +411,7 @@ describe("Feature 4 — Assignment Day Todos", () => {
 
       expect(dayTodoServices.update).toHaveBeenCalledWith(5, { name: "Buy pencils", date: "2026-11-15" });
       expect(page.find(".todo-row").text()).toContain("Buy pencils");
-      expect(page.find(".todo-row").text()).toContain("2026-11-15");
+      expect(page.find('.date-heading[data-date="2026-11-15"]').exists()).toBe(true);
     });
 
     it("User deletes a todo that is not connected to an assignment", async () => {
@@ -437,7 +456,8 @@ describe("Feature 4 — Assignment Day Todos", () => {
       await flushPromises();
 
       expect(dayTodoServices.setCompleted).toHaveBeenCalledWith(1, { completed: true });
-      expect(page.findAll(".todo-row td")[2].classes()).toContain("text-decoration-line-through");
+      await choose(page, "todos", "All");
+      expect(page.findAll(".todo-row td")[1].classes()).toContain("text-decoration-line-through");
 
       const calendarTab = page.findAll(".v-tab").find((item) => item.text().trim() === "Calendar");
       await calendarTab.trigger("click");
@@ -472,6 +492,7 @@ describe("Feature 4 — Assignment Day Todos", () => {
       await flushPromises();
 
       expect(assignmentServices.setCompleted).toHaveBeenCalledWith(1, { completed: true });
+      await choose(page, "assignments", "All");
       const name = page.find(".assignment-row").findAll("td")[1];
       expect(name.text()).toBe("Lab report");
       expect(name.classes()).toContain("text-decoration-line-through");
@@ -487,6 +508,7 @@ describe("Feature 4 — Assignment Day Todos", () => {
         }),
       ]);
 
+      await choose(page, "calendar", "All");
       expect(stripe(page, 1, "2026-11-12").find(".todo-star").attributes("aria-label")).toBe("Todo completed");
     });
   });

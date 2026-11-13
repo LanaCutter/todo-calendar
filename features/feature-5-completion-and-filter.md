@@ -16,7 +16,7 @@
 **So that** I can focus on what is left or review what I already finished
 
 **Priority:** P1
-**Independent test:** With one completed and one open assignment, choose **Unfinished** and see only the open one, then choose **All** and see both
+**Independent test:** With one completed and one open assignment, the list opens on **Unfinished** and shows only the open one, then **All** shows both
 **Acceptance scenarios:** see ### US-5.1 under Acceptance Criteria
 
 ### US-5.2: Finish work from a calendar day
@@ -32,7 +32,7 @@
 
 ### Functional Requirements
 
-- **FR-001**: The assignment list (`/assignments`), the **Todos** tab, and the calendar (`/`) MUST each offer **Unfinished** and **All**. Each view opens on **All**. The choice is local to that view. It is not saved, not shared with the other views, and MUST NOT change stored data.
+- **FR-001**: The assignment list (`/assignments`), the **Todos** tab, and the calendar (`/`) MUST each offer **Unfinished** and **All**. Each view opens on **Unfinished**. The choice is local to that view. It is not saved, not shared with the other views, and MUST NOT change stored data.
 - **FR-002**: On the assignment list, **Unfinished** shows only assignments with `completed` false. **All** shows every assignment. When **Unfinished** hides every row, show "No unfinished assignments." The **All** empty state stays "No assignments yet. Add your first assignment."
 - **FR-003**: On the **Todos** tab, **Unfinished** shows only todos with `completed` false. **All** shows every todo. When **Unfinished** hides every row, show "No unfinished todos." The **All** empty state stays "No todos yet."
 - **FR-004**: On the calendar, **Unfinished** MUST NOT draw a stripe whose assignment is completed, and MUST NOT draw a star whose todo is completed. A not-completed assignment MUST still show its stripe, and a not-completed todo MUST still show its star. **All** shows the Feature 4 stripes and stars, including completed ones. If **Unfinished** leaves no stripe, show "No assignments on this month's calendar."
@@ -54,7 +54,7 @@
 - Day click when that date has no todo → "No todos on this day."
 - Day click while **Unfinished** is selected → the dialog still lists finished todos on that date
 - A todo with no assignment in the day dialog → **Finish todo** only
-- Leaving the page or reloading → the view opens on **All** again
+- Leaving the page or reloading → the view opens on **Unfinished** again
 - Clicking **Create todo** still opens the Feature 4 picker
 
 ## Success Criteria
@@ -94,20 +94,20 @@ Errors use the Feature 4 `message`. The checkbox returns to its previous checked
 ### [View: Assignments] — route name `assignments`
 
 *   The Feature 4 table stays, including **Complete assignment**.
-*   Display control: **Unfinished** and **All**. The view opens on **All**.
+*   Display control: **Unfinished** and **All**. The view opens on **Unfinished**.
 *   **Unfinished** shows only assignments with `completed` false.
 *   When **Unfinished** hides every row, show "No unfinished assignments."
 
 ### [View: Todos] — the calendar **Todos** tab
 
 *   The Feature 4 list stays, including **Finish todo**.
-*   Display control: **Unfinished** and **All**. The view opens on **All**.
+*   Display control: **Unfinished** and **All**. The view opens on **Unfinished**.
 *   **Unfinished** shows only todos with `completed` false.
 *   When **Unfinished** hides every row, show "No unfinished todos."
 
 ### [View: Calendar] — route name `calendar`
 
-*   Same **Unfinished** and **All** control. The view opens on **All**.
+*   Same **Unfinished** and **All** control. The view opens on **Unfinished**.
 *   **Unfinished** does not draw a stripe whose assignment is completed, and does not draw a star whose todo is completed.
 *   If that leaves no stripe, show "No assignments on this month's calendar."
 *   Clicking the day cell opens the day dialog. **Create todo** still opens the Feature 4 picker.
@@ -115,7 +115,7 @@ Errors use the Feature 4 `message`. The checkbox returns to its previous checked
 ### Day dialog
 
 *   Heading is the date in long form, for example **November 12, 2026**. The dialog root sets `data-date` to `YYYY-MM-DD`.
-*   One row per todo on that date. An assignment todo shows the assignment name, the class swatch and name, **Finish todo**, and **Complete assignment**. A todo with no assignment shows its name, **Finish todo**, and no class and no **Complete assignment**.
+*   The todos are a table. Headings are **Todo**, **Assignment**, **Name**, and **Class**. **Todo** is the finish checkbox. **Assignment** is the complete-assignment checkbox. An assignment todo shows the assignment name and the class swatch and name. A todo with no assignment shows its name, no class, and no checkbox under **Assignment**.
 *   Checking a box saves immediately. After **Complete assignment** succeeds with `true`, that row’s **Finish todo** is checked.
 *   The dialog lists finished and unfinished todos on that date, including when the calendar control is **Unfinished**.
 *   **Empty state:** "No todos on this day."
@@ -132,14 +132,16 @@ No schema changes.
 
 #### Scenario: User shows only unfinished assignments
 *   **Given** `Lab report` is completed and `Essay` is not completed
-*   **And** I am on the assignment list showing **All**
-*   **When** I click **Unfinished**
-*   **Then** I see Essay
+*   **And** I am on the assignment list
+*   **When** the list opens
+*   **Then** **Unfinished** is selected
+*   **And** I see Essay
 *   **And** I do not see Lab report
 
 #### Scenario: User shows all assignments including completed ones
 *   **Given** `Lab report` is completed and `Essay` is not completed
-*   **When** I open the assignment list
+*   **And** the assignment list opens on **Unfinished**
+*   **When** I click **All**
 *   **Then** **All** is selected
 *   **And** I see Essay and Lab report
 
@@ -147,13 +149,15 @@ No schema changes.
 *   **Given** a todo on `2026-11-12` for `Lab report` is completed
 *   **And** a todo on `2026-11-13` for `Essay` is not completed
 *   **And** I am on the Todos tab
-*   **When** I click **Unfinished**
-*   **Then** I see the Essay todo
+*   **When** the tab opens
+*   **Then** **Unfinished** is selected
+*   **And** I see the Essay todo
 *   **And** I do not see the Lab report todo
 
 #### Scenario: User shows all todos
 *   **Given** a completed todo and a not-completed todo exist
-*   **When** I open the Todos tab
+*   **And** the Todos tab opens on **Unfinished**
+*   **When** I click **All**
 *   **Then** **All** is selected
 *   **And** I see both todos
 
@@ -168,7 +172,7 @@ No schema changes.
 #### Scenario: User hides a finished todo star on the unfinished calendar
 *   **Given** `Lab report` is not completed and is drawn from `2026-11-09` through `2026-11-13`
 *   **And** its todo on `2026-11-12` is completed and its todo on `2026-11-11` is not completed
-*   **And** the calendar is showing November 2026 on **All**
+*   **And** the calendar is showing November 2026
 *   **When** I click **Unfinished**
 *   **Then** the Lab report stripe is still drawn
 *   **And** `2026-11-12` has no star
@@ -254,11 +258,11 @@ Do not implement behavior not in this spec. Do not add sign-in, sessions, or use
 
 ## Definition of Done
 
-*   [ ] Frontend implemented per this spec (**FR-001** through **FR-006** satisfied)
-*   [ ] **Success Criteria (SC-001** through **SC-003)** met
-*   [ ] All mapped tests pass (`npm test`)
-*   [ ] Test Coverage Map complete
-*   [ ] `features/reference/behavior.md` updated
+*   [x] Frontend implemented per this spec (**FR-001** through **FR-006** satisfied)
+*   [x] **Success Criteria (SC-001** through **SC-003)** met
+*   [x] All mapped tests pass (`npm test`)
+*   [x] Test Coverage Map complete
+*   [x] `features/reference/behavior.md` updated
 
 ## Out of Scope
 

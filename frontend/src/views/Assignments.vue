@@ -1,7 +1,8 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import AssignmentForm from "../components/AssignmentForm.vue";
 import DayTodoDialog from "../components/DayTodoDialog.vue";
+import DisplayFilter from "../components/DisplayFilter.vue";
 import assignmentServices from "../services/assignmentServices.js";
 import classServices from "../services/classServices.js";
 
@@ -20,6 +21,41 @@ const deleting = ref(null);
 const todoOpen = ref(false);
 const todoAssignment = ref(null);
 const todoError = ref("");
+const display = ref("unfinished");
+
+const visibleAssignments = computed(() => {
+  if (display.value !== "unfinished") {
+    return assignments.value;
+  }
+  return assignments.value.filter((item) => !item.completed);
+});
+
+const assignmentGroups = computed(() => {
+  const groups = [];
+  for (const item of visibleAssignments.value) {
+    const date = item.dueDate || "";
+    const last = groups[groups.length - 1];
+    if (!last || last.date !== date) {
+      groups.push({
+        date,
+        label: date ? longDate(date) : "No due date",
+        items: [item],
+      });
+    } else {
+      last.items.push(item);
+    }
+  }
+  return groups;
+});
+
+function longDate(iso) {
+  const [yearPart, monthPart, dayPart] = iso.split("-").map(Number);
+  return new Date(yearPart, monthPart - 1, dayPart).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 function emptyDraft() {
   return { name: "", classId: null, startWorkingBy: null, dueDate: null, dueTime: null };
@@ -176,29 +212,39 @@ onMounted(loadAssignments);
     <v-card class="page-card pa-6" rounded="lg" elevation="0">
     <div class="d-flex align-center justify-space-between flex-wrap ga-4 mb-6">
       <h1 class="text-h4">Assignments</h1>
-      <v-btn color="primary" variant="elevated" class="oc-cta" @click="openAdd">Add assignment</v-btn>
+      <div class="d-flex align-center ga-3">
+        <div data-filter="assignments">
+          <DisplayFilter v-model="display" />
+        </div>
+        <v-btn color="primary" variant="elevated" class="oc-cta" @click="openAdd">Add assignment</v-btn>
+      </div>
     </div>
 
     <v-progress-linear v-if="loading" indeterminate color="primary" />
 
     <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
 
-    <p v-if="!loading && assignments.length === 0 && !error">No assignments yet. Add your first assignment.</p>
+    <p v-if="!loading && visibleAssignments.length === 0 && !error">
+      {{ assignments.length === 0 ? "No assignments yet. Add your first assignment." : "No unfinished assignments." }}
+    </p>
 
-    <v-table v-if="!loading && assignments.length" class="assignment-table">
+    <v-table v-if="!loading && visibleAssignments.length" class="assignment-table">
       <thead>
         <tr>
           <th></th>
           <th>Name</th>
           <th>Class</th>
-          <th>Due date</th>
           <th>Due time</th>
           <th>Start working by</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in assignments" :key="item.id" class="assignment-row">
+        <template v-for="group in assignmentGroups" :key="group.date || 'none'">
+        <tr class="date-heading" :data-date="group.date || 'none'">
+          <th colspan="6">{{ group.label }}</th>
+        </tr>
+        <tr v-for="item in group.items" :key="item.id" class="assignment-row">
           <td>
             <v-checkbox-btn
               :model-value="Boolean(item.completed)"
@@ -221,7 +267,6 @@ onMounted(loadAssignments);
               {{ item.class.name }}
             </span>
           </td>
-          <td>{{ item.dueDate || "" }}</td>
           <td>{{ item.dueTime || "" }}</td>
           <td>{{ item.startWorkingBy || "" }}</td>
           <td class="text-right">
@@ -230,6 +275,7 @@ onMounted(loadAssignments);
             <v-btn icon="mdi-delete" size="small" variant="text" aria-label="Delete assignment" @click="openDelete(item)" />
           </td>
         </tr>
+        </template>
       </tbody>
     </v-table>
 
@@ -273,3 +319,12 @@ onMounted(loadAssignments);
     </v-card>
   </v-container>
 </template>
+
+<style scoped>
+.date-heading th {
+  background: rgba(var(--v-theme-surface-variant), 0.7);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: left;
+}
+</style>

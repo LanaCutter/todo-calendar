@@ -7,7 +7,7 @@
     <v-list nav density="comfortable" bg-color="transparent">
       <v-list-item to="/" exact title="Calendar" prepend-icon="mdi-calendar-month" />
       <v-list-item to="/assignments" title="Assignments" prepend-icon="mdi-format-list-bulleted" />
-      <v-list-item :to="{ path: '/', query: { tab: 'todos' } }" title="Todos" prepend-icon="mdi-checkbox-marked-outline" />
+      <v-list-item :to="{ path: '/', query: { tab: 'todos' } }" exact title="Todos" prepend-icon="mdi-checkbox-marked-outline" />
       <v-list-item to="/classes" title="Classes" prepend-icon="mdi-palette" />
     </v-list>
   </v-navigation-drawer>

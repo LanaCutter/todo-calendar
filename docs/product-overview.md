@@ -31,7 +31,7 @@ The menu, once Feature 4 is in place, links to:
 *   **Todos** — opens the calendar **Todos** tab. Feature 5 adds **Unfinished** and **All**.
 *   **Classes** (`/classes`) — class table
 
-Each of the first three opens showing **All**. **Unfinished** hides completed assignments (list and stripes) or completed todos (todo list and stars). The day dialog still lists every todo on that date, so a finished todo can be unchecked.
+Each of the first three opens showing **Unfinished**. **Unfinished** hides completed assignments (list and stripes) or completed todos (todo list and stars). **All** shows them again. The day dialog still lists every todo on that date, so a finished todo can be unchecked.
 
 ## Completion rules
 

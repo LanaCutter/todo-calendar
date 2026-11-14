@@ -61,6 +61,24 @@ describe("Feature 4 — Assignment Day Todos", () => {
       expect(row.dayTodos.map((item) => item.date)).toEqual(["2026-11-10", "2026-11-12", "2026-12-01"]);
     });
 
+    it("User moves start working by to the earliest todo outside the range", async () => {
+      const course = await createClass();
+      const assignment = await createAssignment(course.id, {
+        dueDate: "2026-11-16",
+        startWorkingBy: "2026-11-14",
+      });
+
+      const response = await request(app).put(`/api/assignments/${assignment.id}/day-todos`).send({
+        dates: ["2026-11-12", "2026-11-15"],
+      });
+
+      expect(response.status).toBe(200);
+      const listed = await request(app).get("/api/assignments");
+      const row = listed.body.find((item) => item.id === assignment.id);
+      expect(row.startWorkingBy).toBe("2026-11-12");
+      expect(row.dueDate).toBe("2026-11-16");
+    });
+
     it("User saves todos for an assignment that does not exist", async () => {
       const response = await request(app).put("/api/assignments/99/day-todos").send({
         dates: ["2026-11-12"],

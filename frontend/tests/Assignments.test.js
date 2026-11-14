@@ -209,7 +209,7 @@ describe("Feature 2 — Assignment Management", () => {
         dueDate: "2026-11-22",
         dueTime: "18:00",
       });
-      expect(wrapper.find(".assignment-row").text()).toContain("2026-11-22");
+      expect(wrapper.find('.date-heading[data-date="2026-11-22"]').exists()).toBe(true);
       expect(wrapper.find(".assignment-row").text()).toContain("18:00");
     });
   });

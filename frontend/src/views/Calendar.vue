@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import assignmentServices from "../services/assignmentServices.js";
 import classServices from "../services/classServices.js";
 import dayTodoServices from "../services/dayTodoServices.js";
+import DisplayFilter from "../components/DisplayFilter.vue";
 import TodoDialog from "../components/TodoDialog.vue";
 
 const props = defineProps({
@@ -47,6 +48,42 @@ const editingTodo = ref(null);
 const todoDialog = ref(null);
 const deleteOpen = ref(false);
 const deletingTodo = ref(null);
+const calendarFilter = ref("unfinished");
+const todosFilter = ref("unfinished");
+const classFilter = ref("all");
+const dayOpen = ref(false);
+const dayIso = ref("");
+const dayError = ref("");
+
+const classChoices = computed(() => [
+  { id: "all", name: "All classes" },
+  ...classes.value.map((item) => ({ id: item.id, name: item.name })),
+]);
+
+const visibleTodos = computed(() =>
+  todos.value.filter((todo) => {
+    if (!matchesClass(todo)) {
+      return false;
+    }
+    return todosFilter.value !== "unfinished" || !todo.completed;
+  }),
+);
+
+const todoGroups = computed(() => groupByDate(visibleTodos.value, (todo) => todo.date));
+
+const dayTodos = computed(() =>
+  todos.value.filter((todo) => todo.date === dayIso.value && matchesClass(todo)),
+);
+
+const todoEmptyMessage = computed(() => {
+  if (todos.value.length === 0) {
+    return "No todos yet.";
+  }
+  if (classFilter.value !== "all" && !todos.value.some((todo) => matchesClass(todo))) {
+    return "No todos for this class.";
+  }
+  return "No unfinished todos.";
+});
 
 const initial = initialMonth(props.showing);
 year.value = initial.year;
@@ -69,6 +106,7 @@ const hasStripe = computed(() =>
 
 const lanes = computed(() =>
   assignments.value
+    .filter((assignment) => shownAssignment(assignment))
     .filter((assignment) => weeks.value.some((week) => week.some((day) => day.inMonth && covers(assignment, day.iso))))
     .slice()
     .sort((left, right) => {
@@ -83,6 +121,38 @@ const lanes = computed(() =>
       return left.id - right.id;
     }),
 );
+
+const weekLayouts = computed(() => weeks.value.map((week) => layoutWeek(week)));
+
+function layoutWeek(week) {
+  const visible = lanes.value.filter((assignment) =>
+    week.some((day) => day.inMonth && covers(assignment, day.iso)),
+  );
+  const laneEnd = [];
+  const laneOf = new Map();
+  for (const assignment of visible) {
+    const start = rangeStart(assignment);
+    let lane = laneEnd.findIndex((endDate) => endDate < start);
+    if (lane < 0) {
+      lane = laneEnd.length;
+    }
+    laneEnd[lane] = assignment.dueDate;
+    laneOf.set(assignment.id, lane);
+  }
+
+  return week.map((day) => {
+    if (!day.inMonth) {
+      return [];
+    }
+    const slots = Array.from({ length: laneEnd.length }, () => null);
+    for (const assignment of visible) {
+      if (covers(assignment, day.iso)) {
+        slots[laneOf.get(assignment.id)] = assignment;
+      }
+    }
+    return slots;
+  });
+}
 
 function rangeStart(assignment) {
   if (!assignment.dueDate) {
@@ -170,8 +240,84 @@ function todoFor(assignment, iso) {
   return (assignment.dayTodos ?? []).find((item) => item.date === iso) ?? null;
 }
 
+function matchesClass(record) {
+  if (classFilter.value === "all") {
+    return true;
+  }
+  const classId = record.class?.id ?? record.classId;
+  return String(classId) === String(classFilter.value);
+}
+
+function shownAssignment(assignment) {
+  if (!matchesClass(assignment)) {
+    return false;
+  }
+  return calendarFilter.value !== "unfinished" || !assignment.completed;
+}
+
+function groupByDate(items, dateOf) {
+  const groups = [];
+  for (const item of items) {
+    const date = dateOf(item) || "";
+    const last = groups[groups.length - 1];
+    if (!last || last.date !== date) {
+      groups.push({
+        date,
+        label: date ? longDate(date) : "No due date",
+        items: [item],
+      });
+    } else {
+      last.items.push(item);
+    }
+  }
+  return groups;
+}
+
+function showStar(assignment, iso) {
+  const todo = todoFor(assignment, iso);
+  if (!todo) {
+    return false;
+  }
+  return calendarFilter.value !== "unfinished" || !todo.completed;
+}
+
+function shownOnStripe(todo) {
+  if (todo.assignmentId == null) {
+    return false;
+  }
+  const assignment = assignments.value.find((item) => item.id === todo.assignmentId);
+  if (!assignment || !shownAssignment(assignment) || !covers(assignment, todo.date)) {
+    return false;
+  }
+  return showStar(assignment, todo.date);
+}
+
+const extraTodosByDate = computed(() => {
+  const grouped = {};
+  for (const todo of todos.value) {
+    if (!todo.date || !matchesClass(todo)) {
+      continue;
+    }
+    if (calendarFilter.value === "unfinished" && todo.completed) {
+      continue;
+    }
+    if (shownOnStripe(todo)) {
+      continue;
+    }
+    if (!grouped[todo.date]) {
+      grouped[todo.date] = [];
+    }
+    grouped[todo.date].push(todo);
+  }
+  return grouped;
+});
+
+const hasExtraTodo = computed(() =>
+  weeks.value.some((week) => week.some((day) => day.inMonth && extraTodosByDate.value[day.iso]?.length)),
+);
+
 function stripesOn(iso) {
-  return assignments.value.filter((assignment) => covers(assignment, iso));
+  return assignments.value.filter((assignment) => shownAssignment(assignment) && covers(assignment, iso));
 }
 
 function shiftMonth(delta) {
@@ -247,6 +393,7 @@ async function finishTodo(todo, completed) {
   if (completed === todo.completed) {
     return;
   }
+  dayError.value = "";
   error.value = "";
   try {
     const response = await dayTodoServices.setCompleted(todo.id, { completed });
@@ -260,7 +407,56 @@ async function finishTodo(todo, completed) {
       day.completed = response.data.completed;
     }
   } catch (err) {
-    error.value = err.response?.data?.message || "Unable to update todo.";
+    const message = err.response?.data?.message || "Unable to update todo.";
+    if (dayOpen.value) {
+      dayError.value = message;
+    } else {
+      error.value = message;
+    }
+  }
+}
+
+function assignmentFor(todo) {
+  return assignments.value.find((item) => item.id === todo.assignmentId) ?? null;
+}
+
+function openDay(iso) {
+  dayIso.value = iso;
+  dayError.value = "";
+  dayOpen.value = true;
+}
+
+function longDate(iso) {
+  const [yearPart, monthPart, dayPart] = iso.split("-").map(Number);
+  return new Date(yearPart, monthPart - 1, dayPart).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+async function completeAssignmentFromDay(todo, completed) {
+  const assignment = assignmentFor(todo);
+  if (!assignment || completed === assignment.completed) {
+    return;
+  }
+  dayError.value = "";
+  try {
+    const response = await assignmentServices.setCompleted(todo.assignmentId, { completed });
+    const updated = response.data;
+    const index = assignments.value.findIndex((item) => item.id === updated.id);
+    if (index >= 0) {
+      assignments.value[index] = updated;
+    }
+    const done = new Map((updated.dayTodos ?? []).map((item) => [item.date, item.completed]));
+    todos.value = todos.value.map((item) => {
+      if (item.assignmentId !== updated.id || !done.has(item.date)) {
+        return item;
+      }
+      return { ...item, completed: done.get(item.date) };
+    });
+  } catch (err) {
+    dayError.value = err.response?.data?.message || "Unable to update assignment.";
   }
 }
 </script>
@@ -284,6 +480,20 @@ async function finishTodo(todo, completed) {
 
       <v-window v-model="tab">
         <v-window-item value="calendar">
+          <div data-filter="calendar" class="d-flex justify-center align-center flex-wrap ga-3 mb-4">
+            <DisplayFilter v-model="calendarFilter" />
+            <v-select
+              v-model="classFilter"
+              :items="classChoices"
+              item-title="name"
+              item-value="id"
+              label="Class"
+              density="compact"
+              hide-details
+              variant="outlined"
+              class="class-filter"
+            />
+          </div>
           <div v-if="classes.length" class="class-legend">
             <div v-for="item in classes" :key="item.id" class="legend-item">
               <span class="legend-swatch" :class="`bg-${item.color}`" :data-color="item.color" />
@@ -298,19 +508,25 @@ async function finishTodo(todo, completed) {
             </v-row>
             <v-row v-for="(week, weekIndex) in weeks" :key="weekIndex" class="calendar-week flex-nowrap" no-gutters>
               <v-col
-                v-for="day in week"
+                v-for="(day, dayIndex) in week"
                 :key="day.iso"
                 class="calendar-day"
                 :data-iso="day.iso"
                 :class="{ 'is-outside': !day.inMonth, 'is-today': day.iso === todayIso }"
+                @click="openDay(day.iso)"
               >
                 <div class="day-number" :class="{ 'text-medium-emphasis': !day.inMonth && day.iso !== todayIso }">
                   <span class="day-number-label">{{ day.number }}</span>
                 </div>
                 <div v-if="day.inMonth" class="day-lanes">
-                  <div v-for="(assignment, laneIndex) in lanes" :key="assignment.id" class="lane" :data-lane="laneIndex">
+                  <div
+                    v-for="(assignment, laneIndex) in weekLayouts[weekIndex][dayIndex]"
+                    :key="laneIndex"
+                    class="lane"
+                    :data-lane="laneIndex"
+                  >
                     <div
-                      v-if="covers(assignment, day.iso)"
+                      v-if="assignment"
                       class="assignment-stripe"
                       :class="[
                         `bg-${assignment.class.color}`,
@@ -326,7 +542,7 @@ async function finishTodo(todo, completed) {
                       :data-color="assignment.class.color"
                     >
                       <span
-                        v-if="todoFor(assignment, day.iso)"
+                        v-if="showStar(assignment, day.iso)"
                         class="todo-star"
                         :aria-label="todoFor(assignment, day.iso).completed ? 'Todo completed' : 'Todo'"
                       >★</span>
@@ -339,29 +555,63 @@ async function finishTodo(todo, completed) {
                     </div>
                   </div>
                 </div>
+                <div v-if="day.inMonth && extraTodosByDate[day.iso]?.length" class="day-extra">
+                  <div
+                    v-for="todo in extraTodosByDate[day.iso]"
+                    :key="todo.id"
+                    class="day-todo-mark"
+                    :class="todo.class ? `bg-${todo.class.color}` : 'is-plain'"
+                    :data-todo-id="todo.id"
+                    :data-date="todo.date"
+                  >
+                    <span class="todo-star" :aria-label="todo.completed ? 'Todo completed' : 'Todo'">★</span>
+                    <span class="stripe-name" :class="{ 'text-decoration-line-through': todo.completed }">{{ todo.name }}</span>
+                  </div>
+                </div>
               </v-col>
             </v-row>
           </div>
-          <p v-if="!loading && !error && !hasStripe" class="mt-4">No assignments on this month's calendar.</p>
+          <p v-if="!loading && !error && !hasStripe && !hasExtraTodo" class="mt-4">No assignments on this month's calendar.</p>
         </v-window-item>
 
         <v-window-item value="todos">
-          <div class="d-flex justify-end mb-4">
+          <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
+            <div class="d-flex align-center flex-wrap ga-3">
+              <div data-filter="todos">
+                <DisplayFilter v-model="todosFilter" />
+              </div>
+              <v-select
+                v-model="classFilter"
+                :items="classChoices"
+                item-title="name"
+                item-value="id"
+                label="Class"
+                density="compact"
+                hide-details
+                variant="outlined"
+                class="class-filter"
+              />
+            </div>
             <v-btn color="primary" variant="elevated" class="oc-cta" @click="openAddTodo">Add todo</v-btn>
           </div>
-          <p v-if="!loading && !error && todos.length === 0" class="todos-empty">No todos yet.</p>
-          <v-table v-if="todos.length" class="todo-table">
+          <p v-if="!loading && !error && visibleTodos.length === 0" class="todos-empty">
+            {{ todoEmptyMessage }}
+          </p>
+          <v-table v-if="visibleTodos.length" class="todo-table">
             <thead>
               <tr>
                 <th>Done</th>
-                <th>Date</th>
                 <th>Todo</th>
                 <th>Class</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="todo in todos" :key="todo.id" class="todo-row">
+              <template v-for="group in todoGroups" :key="group.date">
+              <tr class="date-heading" :data-date="group.date">
+                <th colspan="4">{{ group.label }}</th>
+              </tr>
+              <tr v-for="todo in group.items" :key="todo.id" class="todo-row">
                 <td>
                   <v-checkbox-btn
                     :model-value="Boolean(todo.completed)"
@@ -370,7 +620,6 @@ async function finishTodo(todo, completed) {
                     @update:model-value="(value) => finishTodo(todo, value)"
                   />
                 </td>
-                <td>{{ todo.date }}</td>
                 <td :class="{ 'text-decoration-line-through': todo.completed }">{{ todo.name }}</td>
                 <td>
                   <span v-if="todo.class" class="d-inline-flex align-center">
@@ -392,11 +641,72 @@ async function finishTodo(todo, completed) {
                   </template>
                 </td>
               </tr>
+              </template>
             </tbody>
           </v-table>
         </v-window-item>
       </v-window>
     </v-card>
+    <v-dialog v-model="dayOpen" max-width="720" :data-date="dayIso">
+      <v-card class="day-dialog" :data-date="dayIso">
+        <v-card-title>{{ longDate(dayIso) }}</v-card-title>
+        <v-card-text>
+          <p v-if="dayTodos.length === 0">No todos on this day.</p>
+          <v-table v-else class="day-todo-table">
+            <thead>
+              <tr>
+                <th>Todo</th>
+                <th>Assignment</th>
+                <th>Name</th>
+                <th>Class</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="todo in dayTodos" :key="todo.id" class="day-todo-row">
+                <td>
+                  <v-checkbox-btn
+                    class="finish-todo"
+                    :model-value="Boolean(todo.completed)"
+                    aria-label="Finish todo"
+                    density="compact"
+                    @update:model-value="(value) => finishTodo(todo, value)"
+                  />
+                </td>
+                <td>
+                  <v-checkbox-btn
+                    v-if="todo.assignmentId != null"
+                    class="complete-assignment"
+                    :model-value="Boolean(assignmentFor(todo)?.completed)"
+                    aria-label="Complete assignment"
+                    density="compact"
+                    @update:model-value="(value) => completeAssignmentFromDay(todo, value)"
+                  />
+                </td>
+                <td>{{ todo.name }}</td>
+                <td>
+                  <span v-if="todo.class" class="d-inline-flex align-center">
+                    <v-sheet
+                      :color="todo.class.color"
+                      width="12"
+                      height="12"
+                      rounded
+                      class="mr-2"
+                      :data-color="todo.class.color"
+                    />
+                    {{ todo.class.name }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+          <v-alert v-if="dayError" type="error" class="mt-3">{{ dayError }}</v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn color="secondary" variant="text" @click="dayOpen = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <TodoDialog ref="todoDialog" v-model="todoOpen" :todo="editingTodo" @save="saveTodo" />
     <v-dialog v-model="deleteOpen" max-width="420">
       <v-card>
@@ -421,6 +731,7 @@ async function finishTodo(todo, completed) {
 .month-grid :deep(.v-row) {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  flex: none;
 }
 
 .month-grid :deep(.v-col) {
@@ -452,10 +763,23 @@ async function finishTodo(todo, completed) {
 .calendar-day {
   min-height: 72px;
   overflow: visible;
+  cursor: pointer;
 }
 
 .calendar-day.is-outside {
   background: rgba(var(--v-theme-surface-variant), 0.35);
+}
+
+.class-filter {
+  width: 220px;
+  max-width: 100%;
+}
+
+.date-heading th {
+  background: rgba(var(--v-theme-surface-variant), 0.7);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: left;
 }
 
 .class-legend {
@@ -498,6 +822,28 @@ async function finishTodo(todo, completed) {
   color: rgb(var(--v-theme-on-primary));
   font-size: 9px;
   line-height: 1;
+}
+
+.day-extra {
+  padding: 0 2px 4px;
+}
+
+.day-todo-mark {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 12px;
+  margin-top: 2px;
+  padding: 0 3px;
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 12px;
+  white-space: nowrap;
+}
+
+.day-todo-mark.is-plain {
+  background: rgba(var(--v-theme-on-surface), 0.12);
 }
 
 .day-lanes {

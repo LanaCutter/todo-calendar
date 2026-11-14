@@ -117,6 +117,8 @@ describe("Feature 3 — Assignment Calendar", () => {
       await clickLink(wrapper, "Calendar");
 
       expect(router.currentRoute.value.path).toBe("/");
+      const active = wrapper.findAll(".v-list-item--active").map((item) => item.text().trim());
+      expect(active).toEqual(["Calendar"]);
       expect(wrapper.find("h1").text()).toMatch(/^[A-Z][a-z]+ \d{4}$/);
       expect(wrapper.find(".month-grid").exists()).toBe(true);
     });
@@ -292,6 +294,50 @@ describe("Feature 3 — Assignment Calendar", () => {
       expect(items.map((item) => item.text())).toEqual(["Biology", "History"]);
       expect(items[0].find(".legend-swatch").attributes("data-color")).toBe("green");
       expect(items[1].find(".legend-swatch").attributes("data-color")).toBe("amber");
+    });
+
+    it("User filters the calendar and todos by class", async () => {
+      const history = { id: 2, name: "History", color: "amber" };
+      classServices.getAll.mockResolvedValue({ data: [biology, history] });
+      dayTodoServices.getAll.mockResolvedValue({
+        data: [
+          {
+            id: 1,
+            date: "2026-11-12",
+            name: "Lab report",
+            assignmentId: 1,
+            class: biology,
+            completed: false,
+          },
+          {
+            id: 2,
+            date: "2026-11-18",
+            name: "Essay",
+            assignmentId: 2,
+            class: history,
+            completed: false,
+          },
+        ],
+      });
+      const wrapper = await mountCalendar("2026-11", [
+        assignment({ startWorkingBy: "2026-11-09", dueDate: "2026-11-13" }),
+        assignment({ id: 2, name: "Essay", classId: 2, class: history, dueDate: "2026-11-18" }),
+      ]);
+
+      const select = wrapper.findAllComponents({ name: "VSelect" })[0];
+      await select.vm.$emit("update:modelValue", 2);
+      await flushPromises();
+
+      expect(wrapper.find('[data-assignment-id="2"]').exists()).toBe(true);
+      expect(wrapper.find('[data-assignment-id="1"]').exists()).toBe(false);
+
+      const todos = wrapper.findAll(".v-tab").find((item) => item.text().trim() === "Todos");
+      await todos.trigger("click");
+      await flushPromises();
+
+      const rows = wrapper.findAll(".todo-row").map((row) => row.text());
+      expect(rows.join(" ")).toContain("Essay");
+      expect(rows.join(" ")).not.toContain("Lab report");
     });
 
     it("User sees an empty month message when nothing is drawn", async () => {

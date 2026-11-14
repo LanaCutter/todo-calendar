@@ -281,6 +281,15 @@ exports.replaceForAssignment = async (req, res) => {
           );
         }
       }
+
+      if (dates.length) {
+        const due = dateOnlyString(assignment.dueDate);
+        const start = dateOnlyString(assignment.startWorkingBy);
+        const rangeStart = due ? (start && start <= due ? start : due) : null;
+        if (rangeStart && dates[0] < rangeStart) {
+          await assignment.update({ startWorkingBy: dates[0] }, { transaction });
+        }
+      }
     });
 
     res.send({ dates });

@@ -79,15 +79,15 @@
 
 - **FR-001**: A todo is one calendar date. It MAY belong to one assignment. It MUST NOT have its own name when it belongs to an assignment. A todo with no assignment MUST have a name. Many todos MAY belong to the same assignment. The pair (`assignmentId`, `todoDate`) MUST be unique when `assignmentId` is set.
 - **FR-002**: Each assignment row MUST have a calendar icon (`aria-label` **Create todo**) with no button background. The icon MUST open a month calendar for that assignment. Days that already have a todo for that assignment MUST start selected. The student MUST be able to select one or more days and move between months without losing the current selection. **Save** MUST replace that assignment’s todos with exactly the selected dates. **Cancel** MUST close without saving. The calendar stripe MUST NOT have this control.
-- **FR-003**: `PUT /api/assignments/:id/day-todos` with `{ "dates": ["YYYY-MM-DD", ...] }` MUST replace that assignment’s todos. The response MUST be `200` with `{ "dates": [...] }` sorted ascending. Duplicate dates in the request MUST be stored once. An empty array MUST remove every todo for that assignment. This request MUST NOT change todos that have no assignment. A date that stays in the set MUST keep its `completed` value. A newly added date MUST be `completed: false`. Replacing dates MUST NOT change the assignment’s `completed` flag.
+- **FR-003**: `PUT /api/assignments/:id/day-todos` with `{ "dates": ["YYYY-MM-DD", ...] }` MUST replace that assignment’s todos. The response MUST be `200` with `{ "dates": [...] }` sorted ascending. Duplicate dates in the request MUST be stored once. An empty array MUST remove every todo for that assignment. This request MUST NOT change todos that have no assignment. A date that stays in the set MUST keep its `completed` value. A newly added date MUST be `completed: false`. Replacing dates MUST NOT change the assignment’s `completed` flag or `dueDate`. When the assignment has a due date and the earliest saved todo is before the range, `startWorkingBy` MUST become that earliest date. The range starts at `startWorkingBy` when that date is set and on or before `dueDate`; otherwise it starts at `dueDate`. An assignment with no due date keeps its `startWorkingBy`.
 - **FR-004**: An assignment MUST have `completed` (boolean, default `false`). `GET /api/assignments`, `POST /api/assignments`, and `PUT /api/assignments/:id` responses MUST include `completed` and `dayTodos`. `dayTodos` is an array of `{ "date": "YYYY-MM-DD", "completed": true|false }` sorted by `date` ascending, for that assignment only. Assignments with none MUST include `dayTodos: []`. A new assignment MUST start `completed: false`.
 - **FR-005**: `GET /api/day-todos` MUST return every todo. Each item has `id`, `date` (`YYYY-MM-DD`), `name`, `assignmentId`, `class`, and `completed`. For an assignment todo, `name` is the assignment name, `assignmentId` is that assignment’s id, and `class` is `{ "id", "name", "color" }`. For a todo with no assignment, `assignmentId` and `class` are `null` and `name` is the todo’s own name. Sort by `date` ascending, then `name` case-insensitively. A new todo MUST start `completed: false`.
 - **FR-006**: `POST /api/day-todos` with `{ "name", "date" }` MUST create one todo with no assignment and return `201` with the **FR-005** item. `PUT /api/day-todos/:id` with `{ "name", "date" }` MUST update that todo and return `200` with the item. `DELETE /api/day-todos/:id` MUST delete it and return `200` with `{ "message": "Todo deleted." }`. These three routes MUST refuse a todo that belongs to an assignment with `400` and `{ "message": "Change this todo from the assignment." }` on update or delete.
 - **FR-007**: These routes MUST NOT require `Authorization` and MUST NOT return `401`. There is no `userId` on a todo.
 - **FR-008**: For the assignment replace route, a missing `dates` value, or a `dates` value that is not an array, MUST return `400` with `{ "message": "Dates are required." }`. A value that is not a real `YYYY-MM-DD` date MUST return `400` with `{ "message": "Enter a valid date." }`. An unknown assignment MUST return `404` with `{ "message": "Assignment with id=<id> not found." }`. A non-integer assignment id MUST return `400` with `{ "message": "Assignment id must be a number." }`.
 - **FR-009**: For a todo with no assignment, name is trimmed, required, and at most 200 characters. Empty MUST return `400` with `{ "message": "Name is required." }`. Longer than 200 MUST return `400` with `{ "message": "Name must be 200 characters or fewer." }`. A missing or invalid `date` MUST return `400` with `{ "message": "Date is required." }` or `{ "message": "Enter a valid date." }`. An unknown todo id MUST return `404` with `{ "message": "Todo with id=<id> not found." }`. A non-integer todo id MUST return `400` with `{ "message": "Todo id must be a number." }`.
-- **FR-010**: The sidebar MUST link **Todos** after **Assignments** and before **Classes**. **Todos** opens `/` with the **Todos** tab selected. That tab MUST list every todo from `GET /api/day-todos`. It MUST NOT list the days an assignment’s stripe merely passes through. Columns are **Done**, **Date**, **Todo**, and **Class**. An assignment todo shows the assignment name and the class swatch plus class name. A todo with no assignment shows its own name and a blank class. The tab shows "No todos yet." when the list is empty. **Done** is specified in **FR-016**.
-- **FR-011**: On the calendar, a stripe day that has a todo for that assignment MUST show a star on that stripe. A stripe day with no todo MUST NOT show a star. A todo on a date that has no stripe MUST stay stored, MUST appear on the todos list, MUST appear selected in that assignment’s picker, and MUST NOT show a star. A todo with no assignment MUST NOT show a star. Star labels are in **FR-016**.
+- **FR-010**: The sidebar MUST link **Todos** after **Assignments** and before **Classes**. **Todos** opens `/` with the **Todos** tab selected. That tab MUST list every todo from `GET /api/day-todos`. It MUST NOT list the days an assignment’s stripe merely passes through. Columns are **Done**, **Todo**, and **Class**. The date is a heading listed once before the todos on that day. An assignment todo shows the assignment name and the class swatch plus class name. A todo with no assignment shows its own name and a blank class. The tab shows "No todos yet." when the list is empty. **Done** is specified in **FR-016**.
+- **FR-011**: On the calendar, a stripe day that has a todo for that assignment MUST show a star on that stripe. A stripe day with no todo MUST NOT show a star. A todo on a date that has no stripe MUST stay stored, MUST appear on the todos list, MUST appear selected in that assignment’s picker, and MUST show on that calendar day as its own mark with the todo name and a star. A todo with no assignment shows the same kind of mark on its date. Star labels are in **FR-016**.
 - **FR-012**: Deleting an assignment MUST delete its todos. The database MUST use `ON DELETE CASCADE` from `assignments` to `day_todos`. Todos with no assignment MUST remain.
 - **FR-013**: The student MAY select any calendar day for an assignment, including days outside the stripe and days for an assignment that is not drawn on the calendar.
 - **FR-014**: `PUT /api/day-todos/:id/completion` with `{ "completed": true|false }` MUST set only that todo’s `completed` flag. It MUST NOT change any assignment’s `completed` flag, including when the todo is the assignment’s last open todo. The response MUST be `200` with the **FR-005** item and `assignmentCompleted`. `assignmentCompleted` is the assignment’s `completed` value when the todo has an assignment, and `null` when it does not. A value other than boolean MUST return `400` with `{ "message": "Completed must be true or false." }`. An unknown todo MUST return `404` with `{ "message": "Todo with id=<id> not found." }`. A non-integer id MUST return `400` with `{ "message": "Todo id must be a number." }`.
@@ -101,7 +101,7 @@
 - The assignment picker is a month grid in a dialog, built with Vuetify, same Sunday-first layout as Feature 3. It does not add a calendar library.
 - **Save** on that dialog sends every selected date, including dates in months that are not currently visible.
 - Each selected date becomes one todo. Selecting two days creates two todos for that assignment.
-- Stars are drawn only where Feature 3 already draws a stripe.
+- A todo on a stripe day is a star on that stripe. A todo on a day with no stripe is drawn on that calendar day.
 - A todo with no assignment is one name and one date. Adding another day is another todo.
 
 ## Edge Cases
@@ -113,7 +113,7 @@
 - Cancel → previous todos unchanged and no `PUT`
 - Invalid date or non-array `dates` → `400` as in **FR-008**
 - Unknown assignment or non-integer id → `404` or `400` as in **FR-008**
-- Todo on a day the stripe does not cover → stored, listed, no star
+- Todo on a day the stripe does not cover → stored, listed, and shown on that calendar day
 - Todo on a day the stripe does cover → listed, and a star on that day’s stripe
 - Delete assignment → its todos are gone; a todo with no assignment stays
 - Two assignments on the same day → the star is only on the assignment that has the todo
@@ -268,13 +268,14 @@ Single-user, same as Features 1–3. A todo belongs to an assignment or to no as
 ### [View: Calendar] — route name `calendar`
 
 *   The **Todos** tab lists todos. It does not list stripe days that are not todos.
-*   Columns: **Done**, **Date**, **Todo**, **Class**.
+*   The date is a heading listed once before the todos on that day. Columns: **Done**, **Todo**, **Class**.
 *   **Done** is checkbox `aria-label` **Finish todo**. It saves immediately and does not change the assignment’s completed flag. A completed todo’s name uses line-through.
 *   **Add todo** opens the dialog for a todo with no assignment.
 *   An assignment todo’s row has no edit or delete action. Change those days from the assignment’s calendar icon.
 *   A todo with no assignment has icon **Edit todo** and icon **Delete todo**, with no button background.
 *   **Empty state:** "No todos yet."
 *   On a stripe segment whose date is in that assignment’s `dayTodos`, show a star, left-aligned in that day. `aria-label` is **Todo** when that todo is not completed and **Todo completed** when it is. Other stripe segments for that assignment have no star.
+*   A todo on a day with no stripe is drawn on that calendar day, with the same star and the todo name. A todo with no assignment is drawn the same way.
 *   **Due** is right-aligned on the due-date segment.
 *   When the assignment is completed, the name on the first day of its stripe uses line-through.
 *   Feature 3 `data-assignment-id`, `data-date`, and `data-color` stay on the stripe.
@@ -355,6 +356,12 @@ Unique (`assignmentId`, `todoDate`) for rows that have an assignment. No `userId
 *   **Then** the API returns `200` with `{ "dates": ["2026-11-10", "2026-11-12", "2026-12-01"] }`
 *   **And** `GET /api/assignments` includes those three dates on Lab report, sorted ascending
 
+#### Scenario: User moves start working by to the earliest todo outside the range
+*   **Given** `Lab report` is due `2026-11-16` and starts `2026-11-14`
+*   **When** I replace its todos with `2026-11-12` and `2026-11-15`
+*   **Then** `startWorkingBy` is `2026-11-12`
+*   **And** `dueDate` is still `2026-11-16`
+
 #### Scenario: User selects days in two months and saves both
 *   **Given** the day-todo dialog is open for `Lab report`
 *   **When** I select `2026-11-12`
@@ -424,7 +431,8 @@ Unique (`assignmentId`, `todoDate`) for rows that have an assignment. No `userId
 *   **And** Reading has a todo on `2026-11-04`
 *   **And** the calendar is showing November 2026
 *   **When** the calendar finishes loading
-*   **Then** no star for Reading is shown
+*   **Then** `2026-11-04` shows Reading on the calendar
+*   **And** no assignment stripe is drawn
 *   **And** the **Todos** tab lists `2026-11-04` for Reading
 *   **And** opening **Create todo** for Reading shows `2026-11-04` selected
 
@@ -613,6 +621,7 @@ Each scenario above must map to at least one automated test. `it` names match th
 | US-4.1 | User saves one day as a todo | `backend/tests/dayTodos.test.js` | `User saves one day as a todo` |
 | US-4.1 | User saves one day as a todo | `frontend/tests/DayTodos.test.js` | `User saves one day as a todo` |
 | US-4.1 | User saves several days as todos for the same assignment | `backend/tests/dayTodos.test.js` | `User saves several days as todos for the same assignment` |
+| US-4.1 | User moves start working by to the earliest todo outside the range | `backend/tests/dayTodos.test.js` | `User moves start working by to the earliest todo outside the range` |
 | US-4.1 | User selects days in two months and saves both | `frontend/tests/DayTodos.test.js` | `User selects days in two months and saves both` |
 | US-4.1 | User cancels without changing todos | `frontend/tests/DayTodos.test.js` | `User cancels without changing todos` |
 | US-4.1 | User saves todos for an assignment that does not exist | `backend/tests/dayTodos.test.js` | `User saves todos for an assignment that does not exist` |
@@ -690,7 +699,6 @@ Do not implement behavior not in this spec. Do not add sign-in, sessions, or use
 *   A create-todo control on the calendar stripe
 *   Dragging stripes or changing due dates from the calendar
 *   Reminders and notifications
-*   Showing a star on a day that has no stripe
 
 ## Delivered to Feature 5
 
